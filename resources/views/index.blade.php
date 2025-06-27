@@ -61,9 +61,8 @@
       <div class="layout-wrapper layout-content-navbar">
         <div class="layout-container">
           <!-- Layout container -->
-          <div class="layout-page">
-            <!-- Content wrapper -->
-            <div class="content-wrapper">
+          <!-- Content wrapper -->
+          <div class="content-wrapper">
               <!-- Content -->
               <div class="container-xxl flex-grow-1 container-p-y">
                 <div class="row">
@@ -72,12 +71,12 @@
                       <div class="d-flex align-items-start row">
                         <div class="col-sm-7">
                           <div class="card-body">
-                            <h5 class="card-title text-primary mb-3">Congratulations John! 🎉</h5>
+                            <h5 class="card-title text-primary mb-3">Bienvenido a la Predicción de DT</h5>
                             <p class="mb-6">
-                              You have done 72% more sales today.<br />Check your new badge in your profile.
+                              Sistema para la predicción de resultados en la disciplina de DT.
                             </p>
 
-                            <a href="javascript:;" class="btn btn-sm btn-outline-primary">View Badges</a>
+                            <a href="javascript:;" class="btn btn-sm btn-outline-primary">Ver Predicciones</a>
                           </div>
                         </div>
                         <div class="col-sm-5 text-center text-sm-left">
@@ -684,7 +683,6 @@
               <div class="content-backdrop fade"></div>
             </div>
             <!-- Content wrapper -->
-          </div>
           <!-- / Layout page -->
         </div>
 

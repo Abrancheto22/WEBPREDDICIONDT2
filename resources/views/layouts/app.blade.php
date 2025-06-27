@@ -3,19 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>@yield('title')</title>
-    <!-- Aquí tus estilos -->
 </head>
 <body>
-    @include('components.navbar')
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- Menu -->
+            @include('components.sidebar')
+            <!-- / Menu -->
 
-    <div class="main-container">
-        @include('components.sidebar')
+            <!-- Layout page -->
+            <div class="layout-page">
+                <!-- Navbar -->
+                @include('components.navbar')
+                <!-- / Navbar -->
 
-        <div class="content">
-            @yield('content')
+                <!-- Content -->
+                <div class="content-wrapper">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        @yield('content')
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <!-- Aquí tus scripts -->
 </body>
 </html>
