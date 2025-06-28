@@ -1,4 +1,7 @@
 <!-- Menu -->
+@php
+    use Illuminate\Support\Facades\Auth;
+@endphp
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <div class="app-brand demo">
@@ -69,39 +72,81 @@
           <ul class="menu-inner py-1">
             <!-- Administración -->
             <li class="menu-item">
-              <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div class="text-truncate" data-i18n="Layouts">Administración</div>
-              </a>
-              <ul class="menu-sub">
+              <ul class="menu-inner py-1">
+                {{-- ADMINISTRADOR --}}
+                @if(Auth::user()->rol->idrol === 1)
                 <li class="menu-item">
-                  <a href="{{ route('roles.index') }}" class="menu-link">
-                    <div class="text-truncate" data-i18n="Without menu">Roles</div>
-                  </a>
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-layout"></i>
+                        <div class="text-truncate" data-i18n="Layouts">Administración</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{ route('roles.index') }}" class="menu-link">
+                                <div class="text-truncate" data-i18n="Without menu">Roles</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('users.index') }}" class="menu-link">
+                                <div class="text-truncate" data-i18n="Without menu">Usuarios</div>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
+                @endif
+
+                {{-- DOCTOR --}}
+                @if(Auth::user()->rol->idrol === 2 || Auth::user()->rol->idrol === 1)
                 <li class="menu-item">
-                  <a href="{{ route('users.index') }}" class="menu-link">
-                    <div class="text-truncate" data-i18n="Without menu">Usuarios</div>
-                  </a>
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-plus-medical"></i>
+                        <div class="text-truncate" data-i18n="Layouts">Doctor</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="#" class="menu-link">
+                                <div class="text-truncate">Citas médicas</div>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-              </ul>
+                @endif
+
+                {{-- ENFERMERA --}}
+                @if(Auth::user()->rol->idrol === 3 || Auth::user()->rol->idrol === 1)
+                <li class="menu-item">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-injection"></i>
+                        <div class="text-truncate" data-i18n="Layouts">Enfermera</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="#" class="menu-link">
+                                <div class="text-truncate">Vacunas</div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                @endif
+
+                @if(Auth::user()->rol->idrol === 4 || Auth::user()->rol->idrol === 1)
+                <li class="menu-item">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-user-circle"></i>
+                        <div class="text-truncate" data-i18n="Layouts">Paciente</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="#" class="menu-link">
+                                <div class="text-truncate">Historial</div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                @endif
+            </ul>
+
             </li>
-
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div class="text-truncate" data-i18n="Layouts">Doctor</div>
-            </a>
-
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div class="text-truncate" data-i18n="Layouts">Enfermera</div>
-            </a>
-
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div class="text-truncate" data-i18n="Layouts">Paciente</div>
-            </a>
-            
           </ul>
         </aside>
         <!-- / Menu -->
