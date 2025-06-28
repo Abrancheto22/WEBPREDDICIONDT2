@@ -3,6 +3,21 @@
 @section('title', 'Inicio')
 
 @section('content')
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="d-flex gap-3 mb-3">
+          <a href="{{ route('roles.index') }}" class="btn btn-primary">
+            <i class="bx bx-user-circle"></i> Gestionar Roles
+          </a>
+          <a href="{{ route('users.index') }}" class="btn btn-secondary">
+            <i class="bx bx-user"></i> Gestionar Usuarios
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!doctype html>
   <html
     lang="en"

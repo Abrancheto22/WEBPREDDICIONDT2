@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\IndexController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RolController;
 use Illuminate\Support\Facades\DB;
 
 // Rutas de autenticación
@@ -16,4 +17,6 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('index');
     Route::get('/dashboard', [IndexController::class, 'dashboard'])->name('dashboard');
+    Route::get('/roles', [RolController::class, 'index'])->name('roles.index');
+    Route::get('/users', [IndexController::class, 'users'])->name('users.index');
 });
