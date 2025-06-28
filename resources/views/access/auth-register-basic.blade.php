@@ -119,8 +119,8 @@
                 </a>
               </div>
               <!-- /Logo -->
-              <h4 class="mb-1">Adventure starts here 🚀</h4>
-              <p class="mb-6">Make your app management easy and fun!</p>
+              <h4 class="mb-1">La aventura comienza aquí! 👋</h4>
+              <p class="mb-6">¡Haz que la gestión de tus aplicaciones sea fácil y divertida!</p>
 
               <form id="formAuthentication" class="mb-6" action="{{ route('register') }}" method="POST">
                 @csrf
@@ -171,6 +171,7 @@
                     <span class="input-group-text cursor-pointer"><i class="icon-base bx bx-hide"></i></span>
                   </div>
                 </div>
+                <br>
                 <div class="form-password-toggle">
                   <label class="form-label" for="password_confirmation">Confirm Password</label>
                   <div class="input-group input-group-merge">
@@ -193,9 +194,9 @@
               </form>
 
               <p class="text-center">
-                <span>Already have an account?</span>
+                <span>¿Ya tienes una cuenta?</span>
                 <a href="{{ route('login') }}">
-                  <span>Sign in instead</span>
+                  <span>Inicia sesión</span>
                 </a>
               </p>
             </div>
@@ -203,17 +204,6 @@
           <!-- Register Card -->
         </div>
       </div>
-    </div>
-
-    <!-- / Content -->
-
-    <div class="buy-now">
-      <a
-        href="https://themeselection.com/item/sneat-dashboard-pro-bootstrap/"
-        target="_blank"
-        class="btn btn-danger btn-buy-now"
-        >Upgrade to Pro</a
-      >
     </div>
 
     <!-- Core JS -->

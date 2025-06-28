@@ -107,7 +107,7 @@
         <img src="../plantilla/assets/img/backgrounds/fondo_welcome.webp" alt="Clínica" class="background-image">
         <div class="content-overlay">
             <h1>Bienvenido al Sistema Médico</h1>
-            <p>Administre sus citas y pacientes de manera eficiente. Nuestro sistema le permite gestionar su clínica de manera profesional y eficaz.</p>
+            <p>Administre sus citas y pacientes de manera eficiente. Nuestro nuevo sistema le permite hacer predicciones de manera eficiente y eficaz para lograr una predicción temprana de la diabetes.</p>
             <a href="{{ route('login') }}" class="btn btn-primary">Iniciar Sesión</a>
             <a href="{{ route('register') }}" class="btn btn-secondary">Registrarse</a>
         </div>

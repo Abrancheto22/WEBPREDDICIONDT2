@@ -119,13 +119,13 @@
                 </a>
               </div>
               <!-- /Logo -->
-              <h4 class="mb-1">Welcome to Sneat! 👋</h4>
-              <p class="mb-6">Please sign-in to your account and start the adventure</p>
+              <h4 class="mb-1">Bienvenido a Sneat! 👋</h4>
+              <p class="mb-6">Te invitamos a formar parte de esta familia. Por favor, inicia sesión para continuar</p>
 
               <form id="formAuthentication" class="mb-6" action="{{ route('login') }}" method="POST">
                 @csrf
                 <div class="mb-6">
-                  <label for="email" class="form-label">Email or Username</label>
+                  <label for="email" class="form-label">Email</label>
                   <input
                     type="email"
                     class="form-control"
@@ -162,9 +162,9 @@
               </form>
 
               <p class="text-center">
-                <span>New on our platform?</span>
+                <span>¿Nuevo en nuestra plataforma?</span>
                 <a href="{{ route('register') }}">
-                  <span>Create an account</span>
+                  <span>Crear una cuenta</span>
                 </a>
               </p>
             </div>
@@ -172,17 +172,6 @@
           <!-- /Register -->
         </div>
       </div>
-    </div>
-
-    <!-- / Content -->
-
-    <div class="buy-now">
-      <a
-        href="https://themeselection.com/item/sneat-dashboard-pro-bootstrap/"
-        target="_blank"
-        class="btn btn-danger btn-buy-now"
-        >Upgrade to Pro</a
-      >
     </div>
 
     <!-- Core JS -->
