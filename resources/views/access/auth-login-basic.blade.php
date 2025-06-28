@@ -3,7 +3,7 @@
 <html
   lang="en"
   class="layout-wide customizer-hide"
-  data-assets-path="../assets/"
+  data-assets-path="./plantilla/assets/"
   data-template="vertical-menu-template-free">
   <head>
     <meta charset="utf-8" />
@@ -11,12 +11,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>Demo: Login Basic - Pages | Sneat - Bootstrap Dashboard FREE</title>
+    <title>Login</title>
 
     <meta name="description" content="" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="./plantilla/assets/img/favicon/favicon.ico" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,31 +25,31 @@
       href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
       rel="stylesheet" />
 
-    <link rel="stylesheet" href="../assets/vendor/fonts/iconify-icons.css" />
+    <link rel="stylesheet" href="./plantilla/assets/vendor/fonts/iconify-icons.css" />
 
     <!-- Core CSS -->
     <!-- build:css assets/vendor/css/theme.css  -->
 
-    <link rel="stylesheet" href="../assets/vendor/css/core.css" />
-    <link rel="stylesheet" href="../assets/css/demo.css" />
+    <link rel="stylesheet" href="./plantilla/assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="./plantilla/assets/css/demo.css" />
 
     <!-- Vendors CSS -->
 
-    <link rel="stylesheet" href="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
+    <link rel="stylesheet" href="./plantilla/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
 
     <!-- endbuild -->
 
     <!-- Page CSS -->
     <!-- Page -->
-    <link rel="stylesheet" href="../assets/vendor/css/pages/page-auth.css" />
+    <link rel="stylesheet" href="./plantilla/assets/vendor/css/pages/page-auth.css" />
 
     <!-- Helpers -->
-    <script src="../assets/vendor/js/helpers.js"></script>
+    <script src="./plantilla/assets/vendor/js/helpers.js"></script>
     <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
 
     <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
 
-    <script src="../assets/js/config.js"></script>
+    <script src="./plantilla/assets/js/config.js"></script>
   </head>
 
   <body>
@@ -122,39 +122,38 @@
               <h4 class="mb-1">Welcome to Sneat! 👋</h4>
               <p class="mb-6">Please sign-in to your account and start the adventure</p>
 
-              <form id="formAuthentication" class="mb-6" action="index.html">
+              <form id="formAuthentication" class="mb-6" action="{{ route('login') }}" method="POST">
+                @csrf
                 <div class="mb-6">
                   <label for="email" class="form-label">Email or Username</label>
                   <input
-                    type="text"
+                    type="email"
                     class="form-control"
+                    name="email"
                     id="email"
-                    name="email-username"
-                    placeholder="Enter your email or username"
-                    autofocus />
+                    placeholder="Enter your email"
+                    value="{{ old('email') }}"
+                    required
+                  />
+                  @error('email')
+                    <div class="text-danger">{{ $message }}</div>
+                  @enderror
                 </div>
                 <div class="mb-6 form-password-toggle">
                   <label class="form-label" for="password">Password</label>
                   <div class="input-group input-group-merge">
                     <input
                       type="password"
-                      id="password"
                       class="form-control"
                       name="password"
+                      id="password"
                       placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
-                      aria-describedby="password" />
+                      required
+                    />
+                    @error('password')
+                      <div class="text-danger">{{ $message }}</div>
+                    @enderror
                     <span class="input-group-text cursor-pointer"><i class="icon-base bx bx-hide"></i></span>
-                  </div>
-                </div>
-                <div class="mb-8">
-                  <div class="d-flex justify-content-between">
-                    <div class="form-check mb-0">
-                      <input class="form-check-input" type="checkbox" id="remember-me" />
-                      <label class="form-check-label" for="remember-me"> Remember Me </label>
-                    </div>
-                    <a href="auth-forgot-password-basic.html">
-                      <span>Forgot Password?</span>
-                    </a>
                   </div>
                 </div>
                 <div class="mb-6">
@@ -164,7 +163,7 @@
 
               <p class="text-center">
                 <span>New on our platform?</span>
-                <a href="auth-register-basic.html">
+                <a href="{{ route('register') }}">
                   <span>Create an account</span>
                 </a>
               </p>
@@ -188,14 +187,14 @@
 
     <!-- Core JS -->
 
-    <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="./plantilla/assets/vendor/libs/jquery/jquery.js"></script>
 
-    <script src="../assets/vendor/libs/popper/popper.js"></script>
-    <script src="../assets/vendor/js/bootstrap.js"></script>
+    <script src="./plantilla/assets/vendor/libs/popper/popper.js"></script>
+    <script src="./plantilla/assets/vendor/js/bootstrap.js"></script>
 
-    <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    <script src="./plantilla/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
 
-    <script src="../assets/vendor/js/menu.js"></script>
+    <script src="./plantilla/assets/vendor/js/menu.js"></script>
 
     <!-- endbuild -->
 
@@ -203,7 +202,7 @@
 
     <!-- Main JS -->
 
-    <script src="../assets/js/main.js"></script>
+    <script src="./plantilla/assets/js/main.js"></script>
 
     <!-- Page JS -->
 

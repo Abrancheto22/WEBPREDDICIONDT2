@@ -21,7 +21,16 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'idrol',
     ];
+
+    /**
+     * Obtiene el rol del usuario
+     */
+    public function getRole()
+    {
+        return $this->idrol;
+    }
 
     /**
      * The attributes that should be hidden for serialization.
