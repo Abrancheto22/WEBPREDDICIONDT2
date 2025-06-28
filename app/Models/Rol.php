@@ -8,6 +8,7 @@ use App\Models\User; // Added the User model to use in the relationship
 class Rol extends Model
 {
     protected $table = 'rols';
+    protected $primaryKey = 'idrol';
     
     protected $fillable = [
         'nombre'

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Rol;
 
 class IndexController
 {
@@ -19,7 +20,7 @@ class IndexController
 
     public function users()
     {
-        $usuarios = User::all();
-        return view('users.index', compact('usuarios'));
+        $users = User::with('rol')->get();
+        return view('users.index', compact('users'));
     }
 }

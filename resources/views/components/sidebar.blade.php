@@ -67,13 +67,33 @@
           <div class="menu-inner-shadow"></div>
 
           <ul class="menu-inner py-1">
+            <!-- Administración -->
+            <li class="menu-item">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-layout"></i>
+                <div class="text-truncate" data-i18n="Layouts">Administración</div>
+              </a>
+              <ul class="menu-sub">
+                <li class="menu-item">
+                  <a href="{{ route('roles.index') }}" class="menu-link">
+                    <div class="text-truncate" data-i18n="Without menu">Roles</div>
+                  </a>
+                </li>
+                <li class="menu-item">
+                  <a href="{{ route('users.index') }}" class="menu-link">
+                    <div class="text-truncate" data-i18n="Without menu">Usuarios</div>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+
             <!-- Layouts -->
             <li class="menu-item">
               <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-layout"></i>
                 <div class="text-truncate" data-i18n="Layouts">Layouts</div>
               </a>
-
               <ul class="menu-sub">
                 <li class="menu-item">
                   <a href="layouts-without-menu.html" class="menu-link">

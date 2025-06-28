@@ -26,17 +26,14 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($usuarios as $usuario)
+                                @foreach($users as $user)
                                 <tr>
-                                    <td>{{ $usuario->id }}</td>
-                                    <td>{{ $usuario->name }}</td>
-                                    <td>{{ $usuario->email }}</td>
-                                    <td>{{ $usuario->getRole() }}</td>
+                                    <td>{{ $user->id }}</td>
+                                    <td>{{ $user->name }}</td>
+                                    <td>{{ $user->email }}</td>
+                                    <td>{{ $user->getRoleName() }}</td>
                                     <td>
                                         <div class="d-flex gap-2">
-                                            <a href="#" class="btn btn-sm btn-info">
-                                                <i class="bx bx-show"></i>
-                                            </a>
                                             <a href="#" class="btn btn-sm btn-warning">
                                                 <i class="bx bx-edit"></i>
                                             </a>

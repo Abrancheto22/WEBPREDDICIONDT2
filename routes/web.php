@@ -17,6 +17,16 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('index');
     Route::get('/dashboard', [IndexController::class, 'dashboard'])->name('dashboard');
+
+    /*Rutas de roles*/
     Route::get('/roles', [RolController::class, 'index'])->name('roles.index');
+    Route::get('/roles/create', [RolController::class, 'create'])->name('roles.create');
+    Route::post('/roles', [RolController::class, 'store'])->name('roles.store');
+    Route::get('/roles/{id}/edit', [RolController::class, 'edit'])->name('roles.edit');
+    Route::put('/roles/{idrol}', [RolController::class, 'update'])->name('roles.update');
+    Route::delete('/roles/{id}', [RolController::class, 'destroy'])->name('roles.destroy');
+
+    /* Rutas de usuarios */
     Route::get('/users', [IndexController::class, 'users'])->name('users.index');
+    
 });

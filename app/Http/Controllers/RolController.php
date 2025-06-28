@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Rol;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
+use Illuminate\Validation\Rule;
 
 class RolController
 {
@@ -35,53 +34,67 @@ class RolController
             'nombre' => 'required|string|max:255|unique:rols,nombre'
         ]);
 
-        Rol::create($request->all());
+        $rol = new Rol();
+        $rol->nombre = $request->nombre;
+        $rol->save();
 
         return redirect()->route('roles.index')
             ->with('success', 'Rol creado exitosamente');
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function edit($idrol)
     {
-        $rol = Rol::findOrFail($id);
-        return view('roles.show', compact('rol'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        $rol = Rol::findOrFail($id);
-        return view('roles.edit', compact('rol'));
+        try {
+            $rol = Rol::findOrFail($idrol);
+            return view('roles.edit', compact('rol'));
+        } catch (\Exception $e) {
+            return redirect()->route('roles.index')
+                ->with('error', 'No se encontró el rol especificado');
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $idrol)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255|unique:rols,nombre,' . $id,
-            'descripcion' => 'nullable|string|max:255'
-        ]);
+        try {
+            // Validar los datos del formulario
+            $validated = $request->validate([
+                'nombre' => [
+                    'required', 
+                    'string', 
+                    'max:255',
+                    Rule::unique('rols', 'nombre')->ignore($idrol, 'idrol')
+                ]
+            ]);
 
-        $rol = Rol::findOrFail($id);
-        $rol->update($request->all());
+            // Buscar el rol
+            $rol = Rol::findOrFail($idrol);
+            
+            // Actualizar el rol
+            $rol->nombre = $validated['nombre'];
+            $rol->save();
 
-        return redirect()->route('roles.index')
-            ->with('success', 'Rol actualizado exitosamente');
+            return redirect()->route('roles.index')
+                ->with('success', 'Rol actualizado exitosamente');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Si hay errores de validación, redirigir al formulario de edición
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            // Para otros errores
+            return redirect()->back()
+                ->with('error', 'Error al actualizar el rol: ' . $e->getMessage());
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($idrol)
     {
-        $rol = Rol::findOrFail($id);
+        $rol = Rol::findOrFail($idrol);
         $rol->delete();
 
         return redirect()->route('roles.index')

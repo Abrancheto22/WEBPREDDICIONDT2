@@ -9,7 +9,7 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Lista de Roles</h5>
-                    <a href="#" class="btn btn-primary">
+                    <a href="{{ route('roles.create') }}" class="btn btn-primary">
                         <i class="bx bx-plus"></i> Nuevo Rol
                     </a>
                 </div>
@@ -30,13 +30,10 @@
                                     <td>{{ $rol->nombre }}</td>
                                     <td>
                                         <div class="d-flex gap-2">
-                                            <a href="#" class="btn btn-sm btn-info">
-                                                <i class="bx bx-show"></i>
-                                            </a>
-                                            <a href="#" class="btn btn-sm btn-warning">
+                                            <a href="{{ route('roles.edit', $rol->idrol) }}" class="btn btn-sm btn-warning">
                                                 <i class="bx bx-edit"></i>
                                             </a>
-                                            <form action="#" method="POST" class="d-inline">
+                                            <form action="{{ route('roles.destroy', $rol->idrol) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este rol?')">

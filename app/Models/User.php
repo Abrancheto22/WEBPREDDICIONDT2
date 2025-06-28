@@ -6,12 +6,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Rol;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
     protected $table = 'users';
+
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'name',
@@ -21,24 +24,27 @@ class User extends Authenticatable
         'idrol',
     ];
 
-    /**
-     * Obtiene el rol del usuario
-     */
-    public function getRole()
-    {
-        return $this->idrol;
-    }
-
     protected $hidden = [
         'password',
         'remember_token',
     ];
+
+    public function rol()
+    {
+        return $this->belongsTo(Rol::class, 'idrol', 'idrol');
+    }
+
+    public function getRoleName()
+    {
+        return $this->rol ? $this->rol->nombre : null;
+    }
 
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'idrol' => 'integer'
         ];
     }
 }
