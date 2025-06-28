@@ -28,5 +28,10 @@ Route::middleware(['auth'])->group(function () {
 
     /* Rutas de usuarios */
     Route::get('/users', [IndexController::class, 'users'])->name('users.index');
+    Route::get('/users/create', [IndexController::class, 'createUser'])->name('users.create');
+    Route::post('/users', [IndexController::class, 'storeUser'])->name('users.store');
+    Route::get('/users/{id}/edit', [IndexController::class, 'editUser'])->name('users.edit');
+    Route::put('/users/{idrol}', [IndexController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{id}', [IndexController::class, 'deleteUser'])->name('users.destroy');
     
 });
