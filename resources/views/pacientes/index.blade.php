@@ -1,14 +1,16 @@
 @extends('layouts.app')
 
+@section('title', 'Pacientes')
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Lista de Doctores</h5>
-                    <a href="{{ route('doctores.create') }}" class="btn btn-primary">
-                        <i class="bx bx-plus"></i> Nuevo Doctor
+                    <h5 class="mb-0">Lista de Pacientes</h5>
+                    <a href="{{ route('pacientes.create') }}" class="btn btn-primary">
+                        <i class="bx bx-plus"></i> Nuevo Paciente
                     </a>
                 </div>
                 <div class="card-body table-responsive p-0">
@@ -18,47 +20,49 @@
                                 <th>ID</th>
                                 <th>DNI</th>
                                 <th>Nombre</th>
-                                <th>Número</th>
-                                <th>Especialidad</th>
+                                <th>Teléfono</th>
+                                <th>Sexo</th>
+                                <th>Fecha Nacimiento</th>
                                 <th>Imagen</th>
                                 <th>Usuario</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($doctores as $doctor)
+                            @foreach($pacientes as $paciente)
                             <tr>
-                                <td>{{ $doctor->iddoctor }}</td>
-                                <td>{{ $doctor->DNI }}</td>
-                                <td>{{ $doctor->nombre }} {{ $doctor->apellido }}</td>
-                                <td>{{ $doctor->numero }}</td>
-                                <td>{{ $doctor->especialidad }}</td>
+                                <td>{{ $paciente->idpaciente }}</td>
+                                <td>{{ $paciente->DNI }}</td>
+                                <td>{{ $paciente->nombre }} {{ $paciente->apellido }}</td>
+                                <td>{{ $paciente->telefono }}</td>
+                                <td>{{ $paciente->sexo }}</td>
+                                <td>{{ $paciente->fecha_nacimiento }}</td>
                                 <td>
-                                    @if ($doctor->imagen)
-                                        <img src="{{ asset($doctor->imagen) }}" alt="Imagen del doctor" class="img-fluid" style="max-width: 100px;">
+                                    @if ($paciente->imagen)
+                                        <img src="{{ asset($paciente->imagen) }}" alt="Imagen del paciente" class="img-fluid" style="max-width: 100px;">
                                     @else
                                         <span class="text-muted">No hay imagen</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if ($doctor->usuario)
-                                        {{ $doctor->usuario->name }}
+                                    @if ($paciente->usuario)
+                                        {{ $paciente->usuario->name }}
                                     @else
                                         <span class="text-muted">No asignado</span>
                                     @endif
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <a href="{{ route('doctores.show', $doctor->iddoctor) }}" class="btn btn-sm btn-info">
+                                        <a href="{{ route('pacientes.show', $paciente->idpaciente) }}" class="btn btn-sm btn-info">
                                             <i class="bx bx-show"></i>
                                         </a>
-                                        <a href="{{ route('doctores.edit', $doctor->iddoctor) }}" class="btn btn-sm btn-warning">
+                                        <a href="{{ route('pacientes.edit', $paciente->idpaciente) }}" class="btn btn-sm btn-warning">
                                             <i class="bx bx-edit"></i>
                                         </a>
-                                        <form action="{{ route('doctores.destroy', $doctor->iddoctor) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('pacientes.destroy', $paciente->idpaciente) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este usuario?')">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este paciente?')">
                                                 <i class="bx bx-trash"></i>
                                             </button>
                                         </form>
@@ -74,5 +78,3 @@
     </div>
 </div>
 @endsection
-
-@section('title', 'Doctores')

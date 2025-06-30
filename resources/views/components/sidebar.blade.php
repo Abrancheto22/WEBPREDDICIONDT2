@@ -96,6 +96,16 @@
                                 <div class="text-truncate" data-i18n="Without menu">Doctores</div>
                             </a>
                         </li>
+                        <li class="menu-item">
+                            <a href="{{ route('enfermeras.index') }}" class="menu-link">
+                                <div class="text-truncate" data-i18n="Without menu">Enfermeras</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('pacientes.index') }}" class="menu-link">
+                                <div class="text-truncate" data-i18n="Without menu">Pacientes</div>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 @endif

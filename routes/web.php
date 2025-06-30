@@ -5,6 +5,8 @@ use App\Http\Controllers\IndexController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\EnfermeraController;
+use App\Http\Controllers\PacienteController;
 use Illuminate\Support\Facades\DB;
 
 // Rutas de autenticación
@@ -18,6 +20,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('index');
     Route::get('/dashboard', [IndexController::class, 'dashboard'])->name('dashboard');
+    Route::get('/settings', [IndexController::class, 'settings'])->name('settings');
+    Route::get('/profile', [IndexController::class, 'profile'])->name('profile');
 
     /*Rutas de roles*/
     Route::get('/roles', [RolController::class, 'index'])->name('roles.index');
@@ -36,10 +40,29 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/users/{id}', [IndexController::class, 'deleteUser'])->name('users.destroy');
     
     /*Rutas de doctores*/
-    Route::get('/doctores', [DoctorController::class, 'index'])->name('doctores.index');
+    Route::resource('doctores', DoctorController::class);
+    Route::get('/doctores/{iddoctor}', [DoctorController::class, 'show'])->name('doctores.show');
     Route::get('/doctores/create', [DoctorController::class, 'create'])->name('doctores.create');
     Route::post('/doctores', [DoctorController::class, 'store'])->name('doctores.store');
     Route::get('/doctores/{id}/edit', [DoctorController::class, 'edit'])->name('doctores.edit');
     Route::put('/doctores/{idrol}', [DoctorController::class, 'update'])->name('doctores.update');
     Route::delete('/doctores/{id}', [DoctorController::class, 'destroy'])->name('doctores.destroy');
+
+    /*Rutas de enfermeras*/
+    Route::get('/enfermeras/create', [EnfermeraController::class, 'create'])->name('enfermeras.create');
+    Route::post('/enfermeras', [EnfermeraController::class, 'store'])->name('enfermeras.store');
+    Route::get('/enfermeras', [EnfermeraController::class, 'index'])->name('enfermeras.index');
+    Route::get('/enfermeras/{idenfermera}', [EnfermeraController::class, 'show'])->name('enfermeras.show');
+    Route::get('/enfermeras/{idenfermera}/edit', [EnfermeraController::class, 'edit'])->name('enfermeras.edit');
+    Route::put('/enfermeras/{idenfermera}', [EnfermeraController::class, 'update'])->name('enfermeras.update');
+    Route::delete('/enfermeras/{idenfermera}', [EnfermeraController::class, 'destroy'])->name('enfermeras.destroy');
+    
+    /*Rutas de pacientes*/
+    Route::resource('pacientes', PacienteController::class);
+    Route::get('/pacientes/{idpaciente}', [PacienteController::class, 'show'])->name('pacientes.show');
+    Route::get('/pacientes/create', [PacienteController::class, 'create'])->name('pacientes.create');
+    Route::post('/pacientes', [PacienteController::class, 'store'])->name('pacientes.store');
+    Route::get('/pacientes/{id}/edit', [PacienteController::class, 'edit'])->name('pacientes.edit');
+    Route::put('/pacientes/{idpaciente}', [PacienteController::class, 'update'])->name('pacientes.update');
+    Route::delete('/pacientes/{idpaciente}', [PacienteController::class, 'destroy'])->name('pacientes.destroy');
 });

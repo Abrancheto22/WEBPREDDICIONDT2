@@ -89,6 +89,12 @@ class DoctorController
         return view('doctores.edit', compact('doctor', 'usuarios'));
     }
 
+    public function show($iddoctor)
+    {
+        $doctor = Doctor::with('usuario')->findOrFail($iddoctor);
+        return view('doctores.show', compact('doctor'));
+    }
+
     public function update(Request $request, $iddoctor)
     {
         $doctor = Doctor::findOrFail($iddoctor);

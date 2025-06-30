@@ -22,7 +22,7 @@
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                      <a class="dropdown-item" href="#">
+                      <a class="dropdown-item" href="{{ route('profile') }}">
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar avatar-online">
@@ -40,12 +40,12 @@
                       <div class="dropdown-divider my-1"></div>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="#">
+                      <a class="dropdown-item" href="{{ route('profile') }}">
                         <i class="icon-base bx bx-user icon-md me-3"></i><span>My Profile</span>
                       </a>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="#">
+                      <a class="dropdown-item" href="{{ route('settings') }}">
                         <i class="icon-base bx bx-cog icon-md me-3"></i><span>Settings</span>
                       </a>
                     </li>

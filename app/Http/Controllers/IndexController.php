@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Rol;
+use App\Models\Doctor;
 
 class IndexController
 {
@@ -17,6 +19,18 @@ class IndexController
     public function dashboard()
     {
         return view('index');
+    }
+
+    public function settings()
+    {
+        return view('access.settings');
+    }
+
+    public function profile()
+    {
+        $user = Auth::user();
+        $doctor = $user->doctor; // Obtener el doctor asociado si existe
+        return view('access.profile', compact('user', 'doctor'));
     }
 
     public function users()
