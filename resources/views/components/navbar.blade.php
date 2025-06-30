@@ -9,22 +9,6 @@
     </div>
 
     <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
-        <!-- Search -->
-        <div class="navbar-nav align-items-center me-auto">
-            <div class="nav-item d-flex align-items-center" style="min-width: 300px;">
-                <span class="w-px-22 h-px-22"><i class="icon-base bx bx-search icon-md"></i></span>
-                <input
-                    type="text"
-                    class="form-control border-0 shadow-none ps-1 ps-sm-2 d-md-block d-none"
-                    placeholder="Search..."
-                    aria-label="Search..."
-                    style="flex-grow: 1; min-width: 250px;"
-                />
-            </div>
-        </div>
-        <!-- /Search -->
-
-
             <ul class="navbar-nav flex-row align-items-center ms-md-auto">
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -46,8 +30,8 @@
                             </div>
                           </div>
                           <div class="flex-grow-1">
-                            <h6 class="mb-0">John Doe</h6>
-                            <small class="text-body-secondary">Admin</small>
+                            <h6 class="mb-0">{{ Auth::user()->name }}</h6>
+                            <small class="text-body-secondary">{{ Auth::user()->rol->nombre }}</small>
                           </div>
                         </div>
                       </a>

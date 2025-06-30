@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\IndexController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RolController;
+use App\Http\Controllers\DoctorController;
 use Illuminate\Support\Facades\DB;
 
 // Rutas de autenticación
@@ -34,4 +35,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/users/{idrol}', [IndexController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{id}', [IndexController::class, 'deleteUser'])->name('users.destroy');
     
+    /*Rutas de doctores*/
+    Route::get('/doctores', [DoctorController::class, 'index'])->name('doctores.index');
+    Route::get('/doctores/create', [DoctorController::class, 'create'])->name('doctores.create');
+    Route::post('/doctores', [DoctorController::class, 'store'])->name('doctores.store');
+    Route::get('/doctores/{id}/edit', [DoctorController::class, 'edit'])->name('doctores.edit');
+    Route::put('/doctores/{idrol}', [DoctorController::class, 'update'])->name('doctores.update');
+    Route::delete('/doctores/{id}', [DoctorController::class, 'destroy'])->name('doctores.destroy');
 });
