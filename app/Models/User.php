@@ -39,6 +39,21 @@ class User extends Authenticatable
         return $this->rol ? $this->rol->nombre : null;
     }
 
+    public function doctor()
+    {
+        return $this->hasOne(Doctor::class, 'iduser', 'id');
+    }
+
+    public function enfermera()
+    {
+        return $this->hasOne(Enfermera::class, 'iduser', 'id');
+    }
+
+    public function paciente()
+    {
+        return $this->hasOne(Paciente::class, 'iduser', 'id');
+    }
+
     protected function casts(): array
     {
         return [

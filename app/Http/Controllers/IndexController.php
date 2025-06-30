@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Rol;
 use App\Models\Doctor;
+use App\Models\Enfermera;
+use App\Models\Paciente;
 
 class IndexController
 {
@@ -23,14 +25,70 @@ class IndexController
 
     public function settings()
     {
+        $user = Auth::user();
+        
+        switch ($user->idrol) {
+            case 2: // Doctor
+                $doctor = Doctor::where('iduser', $user->id)->first();
+                if ($doctor) {
+                    return redirect()->route('doctores.edit', ['id' => $doctor->iddoctor]);
+                }
+                break;
+            case 3: // Enfermera
+                $enfermera = Enfermera::where('iduser', $user->id)->first();
+                if ($enfermera) {
+                    return redirect()->route('enfermeras.edit', ['idenfermera' => $enfermera->idenfermera]);
+                }
+                break;
+            case 4: // Paciente
+                $paciente = Paciente::where('iduser', $user->id)->first();
+                if ($paciente) {
+                    return redirect()->route('pacientes.edit', ['id' => $paciente->idpaciente]);
+                }
+                break;
+            default: // Admin u otros roles
+                return view('access.settings');
+        }
+
+        // Si no tiene perfil, redirigir a la vista de settings
         return view('access.settings');
     }
 
     public function profile()
     {
         $user = Auth::user();
-        $doctor = $user->doctor; // Obtener el doctor asociado si existe
-        return view('access.profile', compact('user', 'doctor'));
+        
+        // Determinar el tipo de perfil según el rol
+        $profileData = null;
+        $profileView = null;
+        $profileRoute = null;
+        $profileExists = false;
+
+        switch ($user->idrol) {
+            case 2: // Doctor
+                $profileData = Doctor::where('iduser', $user->id)->first();
+                $profileView = 'doctor';
+                $profileExists = !empty($profileData);
+                $profileRoute = $profileExists ? 'doctores.edit' : 'doctores.create';
+                break;
+            case 3: // Enfermera
+                $profileData = Enfermera::where('iduser', $user->id)->first();
+                $profileView = 'enfermera';
+                $profileExists = !empty($profileData);
+                $profileRoute = $profileExists ? 'enfermeras.edit' : 'enfermeras.create';
+                break;
+            case 4: // Paciente
+                $profileData = Paciente::where('iduser', $user->id)->first();
+                $profileView = 'paciente';
+                $profileExists = !empty($profileData);
+                $profileRoute = $profileExists ? 'pacientes.edit' : 'pacientes.create';
+                break;
+            default: // Admin u otros roles
+                $profileView = 'admin';
+                break;
+        }
+
+        return view('access.profile', compact('user', 'profileData', 'profileView', 'profileRoute', 'profileExists'));
     }
 
     public function users()

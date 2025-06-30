@@ -17,7 +17,7 @@
                     href="javascript:void(0);"
                     data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                      <img src="/plantilla/assets/img/avatars/1.png" alt class="w-px-40 h-auto rounded-circle" />
+                      <img src="{{ Auth::user()->rol->nombre === 'Administrador' ? asset('/plantilla/assets/img/avatars/1.png') : (Auth::user()->doctor ? asset(Auth::user()->doctor->imagen ?? 'assets/img/avatars/1.png') : (Auth::user()->enfermera ? asset(Auth::user()->enfermera->imagen ?? 'assets/img/avatars/1.png') : (Auth::user()->paciente ? asset(Auth::user()->paciente->imagen ?? 'assets/img/avatars/1.png') : asset('assets/img/avatars/1.png')))) }}" alt="{{ Auth::user()->rol->nombre === 'Admin' ? 'admin-avatar' : (Auth::user()->doctor ? 'doctor-avatar' : (Auth::user()->enfermera ? 'enfermera-avatar' : (Auth::user()->paciente ? 'paciente-avatar' : 'user-avatar'))) }}" class="w-px-40 h-px-40 object-cover" style="border-radius: 10%" />
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
@@ -26,7 +26,7 @@
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar avatar-online">
-                              <img src="/plantilla/assets/img/avatars/1.png" alt class="w-px-40 h-auto rounded-circle" />
+                              <img src="{{ Auth::user()->rol->nombre === 'Administrador' ? asset('/plantilla/assets/img/avatars/1.png') : (Auth::user()->doctor ? asset(Auth::user()->doctor->imagen ?? 'assets/img/avatars/1.png') : (Auth::user()->enfermera ? asset(Auth::user()->enfermera->imagen ?? 'assets/img/avatars/1.png') : (Auth::user()->paciente ? asset(Auth::user()->paciente->imagen ?? 'assets/img/avatars/1.png') : asset('assets/img/avatars/1.png')))) }}" alt="{{ Auth::user()->rol->nombre === 'Admin' ? 'admin-avatar' : (Auth::user()->doctor ? 'doctor-avatar' : (Auth::user()->enfermera ? 'enfermera-avatar' : (Auth::user()->paciente ? 'paciente-avatar' : 'user-avatar'))) }}" class="w-px-40 h-px-40 object-cover" style="border-radius: 10%" />
                             </div>
                           </div>
                           <div class="flex-grow-1">
