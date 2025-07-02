@@ -140,6 +140,11 @@
                                 <div class="text-truncate">Citas médicas</div>
                             </a>
                         </li>
+                        <li class="menu-item">
+                            <a href="{{ route('triajes.index') }}" class="menu-link">
+                                <div class="text-truncate">Triajes</div>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 @endif

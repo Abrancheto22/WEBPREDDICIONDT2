@@ -52,7 +52,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="d-flex gap-2">
+                                    <div class="btn-group">
                                         <a href="{{ route('pacientes.show', $paciente->idpaciente) }}" class="btn btn-sm btn-info">
                                             <i class="bx bx-show"></i>
                                         </a>

@@ -33,7 +33,7 @@
                                     <td>{{ $user->email }}</td>
                                     <td>{{ $user->getRoleName() }}</td>
                                     <td>
-                                        <div class="d-flex gap-2">
+                                        <div class="btn-group">
                                             <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning">
                                                 <i class="bx bx-edit"></i>
                                             </a>

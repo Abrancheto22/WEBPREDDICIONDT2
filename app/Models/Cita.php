@@ -42,4 +42,9 @@ class Cita extends Model
     {
         return $this->belongsTo(Enfermera::class, 'idenfermera', 'idenfermera');
     }
+
+    public function triaje()
+    {
+        return $this->hasOne(Triaje::class, 'idcita', 'idcita');
+    }
 }

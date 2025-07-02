@@ -8,6 +8,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\EnfermeraController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\CitasController;
+use App\Http\Controllers\TriajeController;
 use Illuminate\Support\Facades\DB;
 
 // Rutas de autenticación
@@ -75,4 +76,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/citas/{idcita}', [CitasController::class, 'show'])->name('citas.show');
     Route::put('/citas/{idcita}', [CitasController::class, 'update'])->name('citas.update');
     Route::delete('/citas/{idcita}', [CitasController::class, 'destroy'])->name('citas.destroy');
+
+    /*Rutas de triajes*/
+    Route::get('/triajes', [TriajeController::class, 'index'])->name('triajes.index');
+    Route::get('/triajes/create', [TriajeController::class, 'create'])->name('triajes.create');
+    Route::post('/triajes', [TriajeController::class, 'store'])->name('triajes.store');
+    Route::get('/triajes/{idtriaje}/edit', [TriajeController::class, 'edit'])->name('triajes.edit');
+    Route::get('/triajes/{idtriaje}', [TriajeController::class, 'show'])->name('triajes.show');
+    Route::put('/triajes/{idtriaje}', [TriajeController::class, 'update'])->name('triajes.update');
+    Route::delete('/triajes/{idtriaje}', [TriajeController::class, 'destroy'])->name('triajes.destroy');
 });

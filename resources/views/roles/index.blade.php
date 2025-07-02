@@ -29,7 +29,7 @@
                                     <td>{{ $rol->idrol }}</td>
                                     <td>{{ $rol->nombre }}</td>
                                     <td>
-                                        <div class="d-flex gap-2">
+                                        <div class="btn-group">
                                             <a href="{{ route('roles.edit', $rol->idrol) }}" class="btn btn-sm btn-warning">
                                                 <i class="bx bx-edit"></i>
                                             </a>

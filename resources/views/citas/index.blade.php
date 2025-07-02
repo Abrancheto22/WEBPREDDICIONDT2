@@ -36,7 +36,7 @@
                                 <td>{{ \Illuminate\Support\Str::limit($cita->motivo, 30) }}</td>
                                 <td>{{ $cita->estado }}</td>
                                 <td>
-                                    <div class="d-flex gap-2">
+                                    <div class="btn-group">
                                         <a href="{{ route('citas.show', $cita->idcita) }}" class="btn btn-sm btn-info">
                                             <i class="bx bx-show"></i>
                                         </a>
