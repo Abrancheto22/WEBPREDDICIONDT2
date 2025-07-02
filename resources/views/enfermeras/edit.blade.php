@@ -31,45 +31,14 @@
                                 </ul>
                             </div>
                         @endif
-
-                        <div class="mb-3">
-                            <label for="DNI" class="form-label">DNI</label>
-                            <input type="text" class="form-control @error('DNI') is-invalid @enderror" id="DNI" name="DNI" value="{{ old('DNI', $enfermera->DNI) }}" required>
-                            @error('DNI')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre</label>
-                            <input type="text" class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre" value="{{ old('nombre', $enfermera->nombre) }}" required>
-                            @error('nombre')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="apellido" class="form-label">Apellido</label>
-                            <input type="text" class="form-control @error('apellido') is-invalid @enderror" id="apellido" name="apellido" value="{{ old('apellido', $enfermera->apellido) }}" required>
-                            @error('apellido')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="numero" class="form-label">Número de Teléfono</label>
-                            <input type="text" class="form-control @error('numero') is-invalid @enderror" id="numero" name="numero" value="{{ old('numero', $enfermera->numero) }}" required>
-                            @error('numero')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="imagen" class="form-label">Imagen</label>
+                        <!-- Profile Photo Section -->
+                        <div class="d-flex align-items-start align-items-sm-center gap-6 pb-4 border-bottom">
+                            <img
+                                src="{{ asset($enfermera->imagen) }}"
+                                alt="enfermera-avatar"
+                                class="d-block w-px-100 h-px-100 rounded"
+                                id="uploadedAvatar" />
                             <div class="mb-3">
-                                @if ($enfermera->imagen)
-                                    <img src="{{ asset($enfermera->imagen) }}" alt="Imagen actual" class="img-fluid mb-3" style="max-width: 200px;">
-                                @endif
                                 <input type="file" class="form-control @error('imagen') is-invalid @enderror" id="imagen" name="imagen">
                                 <small class="text-muted">Dejar vacío para mantener la imagen actual</small>
                                 @error('imagen')
@@ -77,23 +46,80 @@
                                 @enderror
                             </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="iduser" class="form-label">Usuario</label>
-                            <select class="form-select @error('iduser') is-invalid @enderror" id="iduser" name="iduser" required>
-                                <option value="">Seleccione un usuario...</option>
-                                @foreach($usuarios as $usuario)
-                                    <option value="{{ $usuario->id }}" {{ old('iduser', $enfermera->iduser) == $usuario->id ? 'selected' : '' }}>
-                                        {{ $usuario->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('iduser')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <br>
+                        <div class="row g-6 mb-4">
+                            <div class="col-md-6">
+                                <label for="nombre" class="form-label">Nombre</label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('nombre') is-invalid @enderror"
+                                    id="nombre"
+                                    name="nombre"
+                                    value="{{ old('nombre', $enfermera->nombre) }}"
+                                    required />
+                                @error('nombre')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="apellido" class="form-label">Apellido</label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('apellido') is-invalid @enderror"
+                                    id="apellido"
+                                    name="apellido"
+                                    value="{{ old('apellido', $enfermera->apellido) }}"
+                                    required />
+                                @error('apellido')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-
-                        <div class="d-flex justify-content-end">
+                        <div class="row g-6 mb-4">
+                            <div class="col-md-6">
+                                <label for="DNI" class="form-label">DNI</label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('DNI') is-invalid @enderror"
+                                    id="DNI"
+                                    name="DNI"
+                                    value="{{ old('DNI', $enfermera->DNI) }}"
+                                    required />
+                                @error('DNI')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="numero" class="form-label">Número de Teléfono</label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('numero') is-invalid @enderror"
+                                    id="numero"
+                                    name="numero"
+                                    value="{{ old('numero', $enfermera->numero) }}"
+                                    required />
+                                @error('numero')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row g-6 mb-4">
+                            <div class="col-md-6">
+                                <label for="iduser" class="form-label">Usuario</label>
+                                <select class="form-select @error('iduser') is-invalid @enderror" id="iduser" name="iduser" required>
+                                    <option value="">Seleccione un usuario...</option>
+                                    @foreach($usuarios as $usuario)
+                                        <option value="{{ $usuario->id }}" {{ old('iduser', $enfermera->iduser) == $usuario->id ? 'selected' : '' }}>
+                                            {{ $usuario->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('iduser')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-4">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bx bx-save"></i> Actualizar Enfermera
                             </button>

@@ -47,7 +47,7 @@ class IndexController
                 }
                 break;
             default: // Admin u otros roles
-                return view('access.settings');
+                return redirect()->route('users.edit', ['id' => $user->id]);
         }
 
         // Si no tiene perfil, redirigir a la vista de settings
