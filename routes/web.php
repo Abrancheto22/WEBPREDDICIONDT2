@@ -7,6 +7,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\EnfermeraController;
 use App\Http\Controllers\PacienteController;
+use App\Http\Controllers\CitasController;
 use Illuminate\Support\Facades\DB;
 
 // Rutas de autenticación
@@ -65,4 +66,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pacientes/{id}/edit', [PacienteController::class, 'edit'])->name('pacientes.edit');
     Route::put('/pacientes/{idpaciente}', [PacienteController::class, 'update'])->name('pacientes.update');
     Route::delete('/pacientes/{idpaciente}', [PacienteController::class, 'destroy'])->name('pacientes.destroy');
+
+    /*Rutas de citas*/
+    Route::get('/citas', [CitasController::class, 'index'])->name('citas.index');
+    Route::get('/citas/create', [CitasController::class, 'create'])->name('citas.create');
+    Route::post('/citas', [CitasController::class, 'store'])->name('citas.store');
+    Route::get('/citas/{idcita}/edit', [CitasController::class, 'edit'])->name('citas.edit');
+    Route::get('/citas/{idcita}', [CitasController::class, 'show'])->name('citas.show');
+    Route::put('/citas/{idcita}', [CitasController::class, 'update'])->name('citas.update');
+    Route::delete('/citas/{idcita}', [CitasController::class, 'destroy'])->name('citas.destroy');
 });

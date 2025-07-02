@@ -120,7 +120,7 @@
                     <ul class="menu-sub">
                         <li class="menu-item">
                             <a href="#" class="menu-link">
-                                <div class="text-truncate">Citas médicas</div>
+                                <div class="text-truncate">MEDICOS</div>
                             </a>
                         </li>
                     </ul>
@@ -136,8 +136,8 @@
                     </a>
                     <ul class="menu-sub">
                         <li class="menu-item">
-                            <a href="#" class="menu-link">
-                                <div class="text-truncate">Vacunas</div>
+                            <a href="{{ route('citas.index') }}" class="menu-link">
+                                <div class="text-truncate">Citas médicas</div>
                             </a>
                         </li>
                     </ul>
