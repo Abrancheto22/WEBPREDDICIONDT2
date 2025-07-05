@@ -9,6 +9,7 @@ use App\Http\Controllers\EnfermeraController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\CitasController;
 use App\Http\Controllers\TriajeController;
+use App\Http\Controllers\PrediccionController;
 use Illuminate\Support\Facades\DB;
 
 // Rutas de autenticación
@@ -77,6 +78,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/citas/{idcita}', [CitasController::class, 'update'])->name('citas.update');
     Route::delete('/citas/{idcita}', [CitasController::class, 'destroy'])->name('citas.destroy');
 
+    /*Rutas de citas médicas*/
+    Route::get('/citas-doctores', [CitasController::class, 'index_doctores'])->name('citas_doctores.index');
+    
     /*Rutas de triajes*/
     Route::get('/triajes', [TriajeController::class, 'index'])->name('triajes.index');
     Route::get('/triajes/create', [TriajeController::class, 'create'])->name('triajes.create');
@@ -85,4 +89,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/triajes/{idtriaje}', [TriajeController::class, 'show'])->name('triajes.show');
     Route::put('/triajes/{idtriaje}', [TriajeController::class, 'update'])->name('triajes.update');
     Route::delete('/triajes/{idtriaje}', [TriajeController::class, 'destroy'])->name('triajes.destroy');
+
+    /*Rutas de predicciones*/
+    Route::get('/predicciones', [PrediccionController::class, 'index'])->name('predicciones.index');
+    Route::get('/predicciones/create/{idcita?}', [PrediccionController::class, 'create'])->name('predicciones.create');
+    Route::post('/predicciones', [PrediccionController::class, 'store'])->name('predicciones.store');
+    Route::get('/predicciones/{idprediccion}', [PrediccionController::class, 'show'])->name('predicciones.show');
+    Route::get('/predicciones/{idprediccion}/edit', [PrediccionController::class, 'edit'])->name('predicciones.edit');
+    Route::put('/predicciones/{idprediccion}', [PrediccionController::class, 'update'])->name('predicciones.update');
+    Route::delete('/predicciones/{idprediccion}', [PrediccionController::class, 'destroy'])->name('predicciones.destroy');
 });

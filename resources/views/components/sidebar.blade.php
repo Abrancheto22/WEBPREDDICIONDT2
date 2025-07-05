@@ -119,8 +119,13 @@
                     </a>
                     <ul class="menu-sub">
                         <li class="menu-item">
-                            <a href="#" class="menu-link">
-                                <div class="text-truncate">MEDICOS</div>
+                            <a href="{{ route('citas_doctores.index') }}" class="menu-link">
+                                <div class="text-truncate">Citas médicas</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('predicciones.index') }}" class="menu-link">
+                                <div class="text-truncate">Predicciones</div>
                             </a>
                         </li>
                     </ul>

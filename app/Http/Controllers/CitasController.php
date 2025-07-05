@@ -120,10 +120,45 @@ class CitasController
             ->with('success', 'Cita actualizada exitosamente');
     }
 
-    public function destroy(Cita $cita)
+    public function destroy($idcita)
     {
-        $cita->delete();
-        return redirect()->route('citas.index')
-            ->with('success', 'Cita eliminada exitosamente');
+        $cita = Cita::find($idcita);
+        if (!$cita) {
+            return redirect()->back()->with('error', 'Cita no encontrada');
+        }
+
+        try {
+            DB::beginTransaction();
+            
+            $cita->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('citas.index')
+                ->with('success', 'Cita eliminada exitosamente');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al eliminar la cita');
+        }
+    }
+
+    public function index_doctores()
+    {
+        $citas = Cita::with(['paciente', 'doctor', 'enfermera', 'triaje'])
+            ->get()
+            ->map(function ($cita) {
+                return $cita
+                    ->setAttribute('paciente_nombre', $cita->paciente ? $cita->paciente->nombre : 'N/A')
+                    ->setAttribute('paciente_apellido', $cita->paciente ? $cita->paciente->apellido : 'N/A')
+                    ->setAttribute('doctor_nombre', $cita->doctor ? $cita->doctor->nombre : 'N/A')
+                    ->setAttribute('doctor_apellido', $cita->doctor ? $cita->doctor->apellido : 'N/A')
+                    ->setAttribute('enfermera_nombre', $cita->enfermera ? $cita->enfermera->nombre : 'N/A')
+                    ->setAttribute('enfermera_apellido', $cita->enfermera ? $cita->enfermera->apellido : 'N/A')
+                    ->setAttribute('tiene_triaje', $cita->triaje ? true : false)
+                    ->setAttribute('idtriaje', $cita->triaje ? $cita->triaje->idtriaje : null);
+            });
+        
+        return view('citas_doctores.index', compact('citas'));
     }
 }
