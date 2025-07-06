@@ -96,7 +96,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/predicciones', [PrediccionController::class, 'store'])->name('predicciones.store');
     Route::get('/predicciones/{idprediccion}', [PrediccionController::class, 'show'])->name('predicciones.show');
     Route::get('/predicciones/{idprediccion}/edit', [PrediccionController::class, 'edit'])->name('predicciones.edit');
-    Route::put('/predicciones/{idprediccion}', [PrediccionController::class, 'update'])->name('predicciones.update');
+    Route::post('/predicciones/{idprediccion}/process-edit', [PrediccionController::class, 'processEditedPrediction'])->name('predicciones.process_edited_prediction');
+    Route::put('/predicciones/{idprediccion}', [PrediccionController::class, 'updateConfirmedPrediction'])->name('predicciones.update_confirmed_prediction');
     Route::delete('/predicciones/{idprediccion}', [PrediccionController::class, 'destroy'])->name('predicciones.destroy');
     Route::post('/predicciones/guardar-confirmada', [PrediccionController::class, 'saveConfirmedPrediction'])->name('predicciones.save_confirmed_prediction');
 });

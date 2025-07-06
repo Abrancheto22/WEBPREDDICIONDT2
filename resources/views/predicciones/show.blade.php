@@ -94,18 +94,16 @@
                     </div>
 
                     <div class="mb-4">
-                        <h5 class="mb-3">Resultado</h5>
+                        <h5 class="mb-3">Resultado de la Predicción</h5>
                         <div class="row">
-                            <div class="col-12">
-                                <strong>Resultado:</strong> 
-                                <span class="badge {{ $prediccion->resultado === 1 ? 'bg-danger' : 'bg-success' }}">
-                                    {{ $prediccion->resultado === 1 ? 'Positivo' : 'Negativo' }}
-                                </span>
+                            <div class="col-12 mb-2">
+                                <strong>Probabilidad de Diabetes:</strong> {{ number_format($prediccion->resultado * 100, 2) }}%
                             </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <strong>Observación:</strong> {{ $prediccion->observacion ?? 'Sin observación' }}
+                            <div class="col-12 mb-2">
+                                <strong>Diagnóstico Final:</strong>
+                                <span class="badge {{ $prediccion->resultado >= 0.5 ? 'bg-danger' : 'bg-success' }}">
+                                    {{ $prediccion->resultado >= 0.5 ? 'Positivo' : 'Negativo' }}
+                                </span>
                             </div>
                         </div>
                     </div>

@@ -122,8 +122,6 @@ class PrediccionController extends Controller
             'edad' => 'required|numeric|min:0',
             'observacion' => 'nullable|string',
             'probability_diabetes' => 'required|numeric|min:0|max:1',
-            'prediction_label' => 'required|in:0,1', // 0 o 1
-            'diagnosis' => 'required|string',
         ]);
 
         try {
@@ -139,9 +137,6 @@ class PrediccionController extends Controller
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
             $prediccion->resultado = $validated['probability_diabetes']; // Guardar la probabilidad
-            $prediccion->prediction_label = $validated['prediction_label'];
-            $prediccion->diagnosis = $validated['diagnosis'];
-
             $prediccion->save();
 
             // Actualizar el estado de la cita
@@ -167,32 +162,126 @@ class PrediccionController extends Controller
 
     public function edit($idprediccion)
     {
-        $prediccion = Prediccion::with('cita')->findOrFail($idprediccion);
+        // Asegúrate de cargar las relaciones necesarias para la vista
+        $prediccion = Prediccion::with(['cita.paciente', 'cita.triaje'])->findOrFail($idprediccion);
         return view('predicciones.edit', compact('prediccion'));
     }
-
-    public function update(Request $request, $idprediccion)
+    
+    public function processEditedPrediction(Request $request, $idprediccion)
     {
+        try {
+            // Validar los datos de entrada (los mismos que en store)
+            $validated = $request->validate([
+                'idcita' => 'required|exists:cita,idcita',
+                'embarazos' => 'required|numeric|min:0',
+                'glucosa' => 'required|numeric|min:0',
+                'presion_sanguinea' => 'required|numeric|min:0',
+                'grosor_piel' => 'required|numeric|min:0',
+                'insulina' => 'required|numeric|min:0',
+                'BMI' => 'required|numeric|min:0',
+                'pedigree' => 'required|numeric|min:0',
+                'edad' => 'required|numeric|min:0',
+                'observacion' => 'nullable|string',
+            ]);
+
+            $mlApiUrl = 'http://127.0.0.1:5000/predict'; // Asegúrate de que esta URL sea correcta
+
+            $response = Http::post($mlApiUrl, [
+                'Pregnancies' => (float)$validated['embarazos'],
+                'Glucose' => (float)$validated['glucosa'],
+                'BloodPressure' => (float)$validated['presion_sanguinea'],
+                'SkinThickness' => (float)$validated['grosor_piel'],
+                'Insulin' => (float)$validated['insulina'],
+                'BMI' => (float)$validated['BMI'],
+                'DiabetesPedigreeFunction' => (float)$validated['pedigree'],
+                'Age' => (float)$validated['edad'],
+            ]);
+
+            $response->throw(); // Lanza una excepción si la respuesta tiene un error de cliente o servidor
+
+            $predictionResult = $response->json();
+
+            // Devolver la respuesta como JSON
+            return response()->json([
+                'success' => true,
+                'message' => 'Re-predicción obtenida con éxito',
+                'predictionResult' => $predictionResult,
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            Log::error('Error al conectar con la API de Flask para re-predicción: ' . $e->getMessage(), ['url' => $mlApiUrl, 'response' => $e->response ? $e->response->body() : 'N/A']);
+            return response()->json([
+                'success' => false,
+                'error' => 'No se pudo conectar con el servicio de predicción para re-evaluar. Asegúrese de que la API de ML esté en funcionamiento y accesible.'
+            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Error inesperado al procesar la re-predicción: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Ocurrió un error inesperado al procesar la re-predicción. Por favor, inténtelo de nuevo.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Guarda la predicción editada y confirmada en la base de datos.
+     * Este método reemplaza la lógica original del método 'update'.
+     */
+    public function updateConfirmedPrediction(Request $request, $idprediccion)
+    {
+        // Validar todos los datos, incluyendo los resultados de la ML
         $validated = $request->validate([
+            'idcita' => 'required|exists:cita,idcita',
+            'embarazos' => 'required|numeric|min:0',
             'glucosa' => 'required|numeric|min:0',
             'presion_sanguinea' => 'required|numeric|min:0',
             'grosor_piel' => 'required|numeric|min:0',
-            'embarazos' => 'required|numeric|min:0',
+            'insulina' => 'required|numeric|min:0',
             'BMI' => 'required|numeric|min:0',
             'pedigree' => 'required|numeric|min:0',
             'edad' => 'required|numeric|min:0',
-            'insulina' => 'required|numeric|min:0',
             'observacion' => 'nullable|string',
-            'resultado' => 'required|numeric' // Este campo aún se valida si lo actualizas manualmente
+            'probability_diabetes' => 'required|numeric|min:0|max:1',
         ]);
 
-        $prediccion = Prediccion::findOrFail($idprediccion);
-        $prediccion->update($validated);
+        try {
+            $prediccion = Prediccion::findOrFail($idprediccion); // Encuentra la predicción existente
 
-        return redirect()->route('predicciones.index')
-            ->with('success', 'Predicción actualizada exitosamente');
+            $prediccion->idcita = $validated['idcita']; // Aunque es readonly, se re-asigna
+            $prediccion->embarazos = $validated['embarazos'];
+            $prediccion->glucosa = $validated['glucosa'];
+            $prediccion->presion_sanguinea = $validated['presion_sanguinea'];
+            $prediccion->grosor_piel = $validated['grosor_piel'];
+            $prediccion->insulina = $validated['insulina'];
+            $prediccion->BMI = $validated['BMI'];
+            $prediccion->pedigree = $validated['pedigree'];
+            $prediccion->edad = $validated['edad'];
+            $prediccion->observacion = $validated['observacion'];
+            $prediccion->resultado = $validated['probability_diabetes']; // Actualiza con la nueva probabilidad
+            $prediccion->save(); // Guarda los cambios
+
+            // Actualizar el estado de la cita si es necesario (ej. a 'completada' o 'revisada')
+            // Este es un ejemplo, ajusta la lógica según tu flujo de negocio
+            // $cita = Cita::find($validated['idcita']);
+            // if ($cita) {
+            //     $cita->estado = 'revisada';
+            //     $cita->save();
+            // }
+
+            return redirect()->route('predicciones.index')->with('success', 'Predicción actualizada exitosamente con nuevos resultados de ML.');
+
+        } catch (\Exception $e) {
+            Log::error('Error al guardar la predicción editada y confirmada: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Error al guardar los cambios en la predicción. Detalles: ' . $e->getMessage());
+        }
     }
-
+    
     public function destroy($idprediccion)
     {
         $prediccion = Prediccion::findOrFail($idprediccion);
