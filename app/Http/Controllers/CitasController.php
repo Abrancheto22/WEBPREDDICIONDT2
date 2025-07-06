@@ -8,7 +8,7 @@ use App\Models\Paciente;
 use App\Models\Doctor;
 use App\Models\Enfermera;
 
-class CitasController
+class CitasController extends Controller
 {
     public function index()
     {

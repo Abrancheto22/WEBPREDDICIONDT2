@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <div class="card">
         <div class="card-header">
-            <h3 class="mb-0">Realizar Análisis</h3>
+            <h3 class="mb-0">Realizar Análisis de Diabetes (ML)</h3>
         </div>
         <div class="card-body">
             @if(session('error'))
@@ -14,30 +14,46 @@
                     {{ session('error') }}
                 </div>
             @endif
+            @if(session('warning'))
+                <div class="alert alert-warning">
+                    {{ session('warning') }}
+                </div>
+            @endif
 
-            <form action="{{ route('predicciones.store') }}" method="POST">
+            {{-- Mostrar errores de validación del backend --}}
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            {{-- FORMULARIO PRINCIPAL PARA LA PREDICCIÓN --}}
+            <form id="predictionForm" action="{{ route('predicciones.store') }}" method="POST">
                 @csrf
 
-                <!-- Sección de Información de Cita -->
                 <div class="row mb-4">
                     <div class="col-12">
-                        <!-- Cita -->
                         <div class="mb-3">
                             <label for="idcita" class="form-label">Cita</label>
                             <select name="idcita" id="idcita" class="form-select @error('idcita') is-invalid @enderror" 
-                                    onchange="mostrarInfoCita(this.value)">
-                                @if(isset($cita))
-                                    <option value="{{ $cita->idcita }}" selected data-triaje='{{ json_encode($cita->triaje) }}'>
+                                    onchange="cargarDatosTriaje(this.value)" required>
+                                @if(isset($cita) && $cita)
+                                    <option value="{{ $cita->idcita }}" selected>
                                         {{ $cita->paciente->nombre }} {{ $cita->paciente->apellido }} - 
                                         {{ $cita->fecha_cita }} {{ date('H:i', strtotime($cita->hora_cita)) }}
                                     </option>
                                 @else
                                     <option value="">Selecciona una cita</option>
-                                    @foreach($citas as $cita)
-                                        @if($cita->triaje)
-                                            <option value="{{ $cita->idcita }}" data-triaje='{{ json_encode($cita->triaje) }}'>
-                                                {{ $cita->paciente->nombre }} {{ $cita->paciente->apellido }} - 
-                                                {{ $cita->fecha_cita }} {{ date('H:i', strtotime($cita->hora_cita)) }}
+                                    @foreach($citas as $c)
+                                        @if($c->triaje)
+                                            <option value="{{ $c->idcita }}" 
+                                                    {{ old('idcita') == $c->idcita ? 'selected' : '' }}>
+                                                {{ $c->paciente->nombre }} {{ $c->paciente->apellido }} - 
+                                                {{ $c->fecha_cita }} {{ date('H:i', strtotime($c->hora_cita)) }}
                                             </option>
                                         @endif
                                     @endforeach
@@ -48,161 +64,117 @@
                             @enderror
                         </div>
 
-                        <!-- Información de la Cita Seleccionada -->
-                        <div id="infoCita" class="mt-3" style="display: none;">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <strong>Paciente:</strong> <span id="pacienteNombre">-</span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>DNI:</strong> <span id="pacienteDNI">-</span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>Sexo:</strong> <span id="pacienteSexo">-</span>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-md-4">
-                                            <strong>Teléfono:</strong> <span id="pacienteTelefono">-</span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>Fecha:</strong> <span id="citaFecha">-</span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>Hora:</strong> <span id="citaHora">-</span>
-                                        </div>
-                                    </div>
+                        <div id="infoCita" class="mt-3 card bg-light p-3" style="display: none;">
+                            <h5 class="card-title">Detalles de la Cita y Paciente</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Paciente:</strong> <span id="infoPacienteNombre">-</span></p>
+                                    <p><strong>DNI:</strong> <span id="infoPacienteDNI">-</span></p>
+                                    <p><strong>Sexo:</strong> <span id="infoPacienteSexo">-</span></p>
                                 </div>
+                                <div class="col-md-6">
+                                    <p><strong>Teléfono:</strong> <span id="infoPacienteTelefono">-</span></p>
+                                    <p><strong>Fecha Cita:</strong> <span id="infoCitaFecha">-</span></p>
+                                    <p><strong>Hora Cita:</strong> <span id="infoCitaHora">-</span></p>
+                                </div>
+                            </div>
+                            <div id="alertaSinTriaje" class="alert alert-warning mt-3" style="display: none;">
+                                La cita seleccionada no tiene un triaje asociado. Por favor, ingrese los datos manualmente.
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sección de Datos de Predicción -->
                 <div class="row">
                     <div class="col-12">
-                        <h5 class="mb-3">Datos de la Predicción</h5>
+                        <h5 class="mb-3">Datos para la Predicción (Pima Indians)</h5>
 
-                <!-- Fila 1: Glucosa y Presión Sanguínea -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="glucosa" class="form-label">Glucosa</label>
-                            <input type="number" name="glucosa" id="glucosa" 
-                                   class="form-control @error('glucosa') is-invalid @enderror" 
-                                   value="{{ old('glucosa') }}" required>
-                            @error('glucosa')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="embarazos" class="form-label">Número de Embarazos</label>
+                                <input type="number" name="embarazos" id="embarazos" 
+                                       class="form-control @error('embarazos') is-invalid @enderror" 
+                                       value="{{ old('embarazos', $cita->triaje->embarazos ?? '') }}" required min="0">
+                                @error('embarazos')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="glucosa" class="form-label">Glucosa</label>
+                                <input type="number" step="0.01" name="glucosa" id="glucosa" 
+                                       class="form-control @error('glucosa') is-invalid @enderror" 
+                                       value="{{ old('glucosa', $cita->triaje->glucosa ?? '') }}" required min="0">
+                                @error('glucosa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="presion_sanguinea" class="form-label">Presión Sanguínea</label>
-                            <input type="number" name="presion_sanguinea" id="presion_sanguinea" 
-                                   class="form-control @error('presion_sanguinea') is-invalid @enderror" 
-                                   value="{{ old('presion_sanguinea') }}" required>
-                            @error('presion_sanguinea')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Fila 2: Grosor Piel y Embarazos -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="grosor_piel" class="form-label">Grosor de Piel (mm)</label>
-                            <input type="number" name="grosor_piel" id="grosor_piel" 
-                                   class="form-control @error('grosor_piel') is-invalid @enderror" 
-                                   value="{{ old('grosor_piel') }}" required readonly>
-                            @error('grosor_piel')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="presion_sanguinea" class="form-label">Presión Sanguínea</label>
+                                <input type="number" step="0.01" name="presion_sanguinea" id="presion_sanguinea" 
+                                       class="form-control @error('presion_sanguinea') is-invalid @enderror" 
+                                       value="{{ old('presion_sanguinea', $cita->triaje->presion_sanguinea ?? '') }}" required min="0">
+                                @error('presion_sanguinea')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="grosor_piel" class="form-label">Grosor de Piel (mm)</label>
+                                <input type="number" step="0.01" name="grosor_piel" id="grosor_piel" 
+                                       class="form-control @error('grosor_piel') is-invalid @enderror" 
+                                       value="{{ old('grosor_piel', $cita->triaje->grosor_piel ?? '') }}" required min="0">
+                                @error('grosor_piel')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="embarazos" class="form-label">Embarazos</label>
-                            <input type="number" name="embarazos" id="embarazos" 
-                                   class="form-control @error('embarazos') is-invalid @enderror" 
-                                   value="{{ old('embarazos') }}" required>
-                            @error('embarazos')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Fila 3: BMI y Pedigree -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="BMI" class="form-label">BMI (kg/m2)</label>
-                            <input type="number" step="0.01" name="BMI" id="BMI" 
-                                   class="form-control @error('BMI') is-invalid @enderror" 
-                                   value="{{ old('BMI') }}" required readonly>
-                            @error('BMI')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="insulina" class="form-label">Insulina (mu U/ml)</label>
+                                <input type="number" step="0.01" name="insulina" id="insulina" 
+                                       class="form-control @error('insulina') is-invalid @enderror" 
+                                       value="{{ old('insulina', $cita->triaje->insulina ?? '') }}" required min="0">
+                                @error('insulina')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="BMI" class="form-label">BMI (kg/m2)</label>
+                                <input type="number" step="0.01" name="BMI" id="BMI" 
+                                       class="form-control @error('BMI') is-invalid @enderror" 
+                                       value="{{ old('BMI', $cita->triaje->BMI ?? '') }}" required min="0">
+                                @error('BMI')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="pedigree" class="form-label">Pedigree</label>
-                            <input type="number" step="0.001" name="pedigree" id="pedigree" 
-                                   class="form-control @error('pedigree') is-invalid @enderror" 
-                                   value="{{ old('pedigree') }}" required>
-                            @error('pedigree')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Fila 4: Edad y Observación -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="edad" class="form-label">Edad (años)</label>
-                            <input type="number" name="edad" id="edad" 
-                                   class="form-control @error('edad') is-invalid @enderror" 
-                                   value="{{ old('edad') }}" required readonly>
-                            @error('edad')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pedigree" class="form-label">Función Pedigree de Diabetes</label>
+                                <input type="number" step="0.001" name="pedigree" id="pedigree" 
+                                       class="form-control @error('pedigree') is-invalid @enderror" 
+                                       value="{{ old('pedigree', $cita->triaje->pedigree ?? '') }}" required min="0">
+                                @error('pedigree')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edad" class="form-label">Edad (años)</label>
+                                <input type="number" name="edad" id="edad" 
+                                       class="form-control @error('edad') is-invalid @enderror" 
+                                       value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="0">
+                                @error('edad')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
+
                         <div class="mb-3">
-                            <label for="insulina" class="form-label">Insulina (mu U/ml)</label>
-                            <input type="number" name="insulina" id="insulina" 
-                                   class="form-control @error('insulina') is-invalid @enderror" 
-                                   value="{{ old('insulina') }}" required>
-                            @error('insulina')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="resultado" class="form-label">Resultado</label>
-                            <input type="number" name="resultado" id="resultado" 
-                                   class="form-control @error('resultado') is-invalid @enderror" 
-                                   value="1" required readonly>
-                            @error('resultado')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="mb-3">
-                            <label for="observacion" class="form-label">Observación</label>
+                            <label for="observacion" class="form-label">Observación (Opcional)</label>
                             <textarea name="observacion" id="observacion" 
                                       class="form-control @error('observacion') is-invalid @enderror"
                                       rows="3">{{ old('observacion') }}</textarea>
@@ -213,112 +185,251 @@
                     </div>
                 </div>
 
-                <!-- Botones de acción -->
                 <div class="row">
                     <div class="col-12">
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('predicciones.index') }}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar Predicción</button>
+                            <button type="submit" id="predictBtn" class="btn btn-primary">
+                                <span id="predictBtnText">Predecir</span>
+                                <span id="predictSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                <span id="predictLoadingText" class="d-none">Cargando...</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </form>
+
+            <hr class="my-4">
+
+            {{-- SECCIÓN PARA MOSTRAR EL RESULTADO DE LA PREDICCIÓN (inicialmente oculta) --}}
+            <div id="predictionResultSection" style="display: none;">
+                <h4 class="mb-3">Resultado de la Predicción:</h4>
+                <div id="predictionResultContent">
+                    {{-- Aquí se inyectará el resultado via JS --}}
+                </div>
+
+                {{-- FORMULARIO PARA GUARDAR LA PREDICCIÓN (inicialmente oculto) --}}
+                <form id="savePredictionForm" action="{{ route('predicciones.save_confirmed_prediction') }}" method="POST" style="display: none;">
+                    @csrf
+                    {{-- Hidden inputs para los datos originales --}}
+                    <input type="hidden" name="idcita" id="save_idcita">
+                    <input type="hidden" name="embarazos" id="save_embarazos">
+                    <input type="hidden" name="glucosa" id="save_glucosa">
+                    <input type="hidden" name="presion_sanguinea" id="save_presion_sanguinea">
+                    <input type="hidden" name="grosor_piel" id="save_grosor_piel">
+                    <input type="hidden" name="insulina" id="save_insulina">
+                    <input type="hidden" name="BMI" id="save_BMI">
+                    <input type="hidden" name="pedigree" id="save_pedigree">
+                    <input type="hidden" name="edad" id="save_edad">
+                    <input type="hidden" name="observacion" id="save_observacion">
+                    
+                    {{-- Hidden inputs para los resultados de la predicción --}}
+                    <input type="hidden" name="probability_diabetes" id="save_probability_diabetes">
+                    <input type="hidden" name="prediction_label" id="save_prediction_label">
+                    <input type="hidden" name="diagnosis" id="save_diagnosis">
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-success">Guardar Predicción</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    function mostrarInfoCita(idCita) {
-        if (idCita) {
-            const selectCita = document.getElementById('idcita');
-            const option = selectCita.options[selectCita.selectedIndex];
-            const citaText = option.text;
-            
-            const [paciente, fechaHora] = citaText.split(' - ');
-            const [fecha, hora] = fechaHora.split(' ');
-            
-            // Formatear la hora a HH:mm
-            const horaFormateada = hora.split(':').slice(0, 2).join(':');
-            
-            // Obtener la cita seleccionada para mostrar más información
-            const triajeInfo = option.getAttribute('data-triaje');
-            const triajeData = JSON.parse(triajeInfo || '{}');
-            
-            document.getElementById('infoCita').style.display = 'block';
-            document.getElementById('pacienteNombre').textContent = paciente;
-            document.getElementById('citaFecha').textContent = fecha;
-            document.getElementById('citaHora').textContent = horaFormateada;
-            
-            // Cargar el BMI del triaje si existe
-            if (triajeData.BMI) {
-                document.getElementById('BMI').value = triajeData.BMI;
-            }
-            
-            // Cargar el grosor de piel del triaje si existe
-            if (triajeData.grosor_piel) {
-                document.getElementById('grosor_piel').value = triajeData.grosor_piel;
-            }
-            
-            // Cargar la edad del triaje si existe
-            if (triajeData.edad) {
-                document.getElementById('edad').value = triajeData.edad;
-            }
-            
-        } else {
-            document.getElementById('infoCita').style.display = 'none';
-            // Limpiar los campos cuando no hay cita seleccionada
-            document.getElementById('BMI').value = '';
+    // Variable global para almacenar todas las citas con sus relaciones (triaje, paciente)
+    const allCitasData = @json($citas);
+
+    function cargarDatosTriaje(idCita) {
+        const infoCitaDiv = document.getElementById('infoCita');
+        const alertaSinTriaje = document.getElementById('alertaSinTriaje');
+
+        if (!idCita) {
+            infoCitaDiv.style.display = 'none';
+            alertaSinTriaje.style.display = 'none';
+            // Limpiar todos los campos de predicción
+            document.getElementById('embarazos').value = '';
+            document.getElementById('glucosa').value = '';
+            document.getElementById('presion_sanguinea').value = '';
             document.getElementById('grosor_piel').value = '';
+            document.getElementById('insulina').value = '';
+            document.getElementById('BMI').value = '';
+            document.getElementById('pedigree').value = '';
             document.getElementById('edad').value = '';
+            document.getElementById('observacion').value = ''; // También limpiar observación
+            return;
         }
+
+        const citaSeleccionada = allCitasData.find(cita => cita.idcita == idCita);
+
+        if (citaSeleccionada) {
+            infoCitaDiv.style.display = 'block';
+
+            document.getElementById('infoPacienteNombre').textContent = `${citaSeleccionada.paciente.nombre || ''} ${citaSeleccionada.paciente.apellido || ''}`;
+            document.getElementById('infoPacienteDNI').textContent = citaSeleccionada.paciente.DNI || '-';
+            document.getElementById('infoPacienteSexo').textContent = citaSeleccionada.paciente.sexo || '-';
+            document.getElementById('infoPacienteTelefono').textContent = citaSeleccionada.paciente.telefono || '-';
+            document.getElementById('infoCitaFecha').textContent = citaSeleccionada.fecha_cita || '-';
+            document.getElementById('infoCitaHora').textContent = citaSeleccionada.hora_cita ? citaSeleccionada.hora_cita.substring(0, 5) : '-'; 
+
+            if (citaSeleccionada.triaje) {
+                alertaSinTriaje.style.display = 'none';
+                document.getElementById('embarazos').value = citaSeleccionada.triaje.embarazos || '';
+                document.getElementById('glucosa').value = citaSeleccionada.triaje.glucosa || '';
+                document.getElementById('presion_sanguinea').value = citaSeleccionada.triaje.presion_sanguinea || '';
+                document.getElementById('grosor_piel').value = citaSeleccionada.triaje.grosor_piel || '';
+                document.getElementById('insulina').value = citaSeleccionada.triaje.insulina || '';
+                document.getElementById('BMI').value = citaSeleccionada.triaje.BMI || '';
+                document.getElementById('pedigree').value = citaSeleccionada.triaje.pedigree || '';
+                document.getElementById('edad').value = citaSeleccionada.triaje.edad || '';
+            } else {
+                alertaSinTriaje.style.display = 'block';
+                // Limpiar campos si no hay triaje
+                document.getElementById('embarazos').value = '';
+                document.getElementById('glucosa').value = '';
+                document.getElementById('presion_sanguinea').value = '';
+                document.getElementById('grosor_piel').value = '';
+                document.getElementById('insulina').value = '';
+                document.getElementById('BMI').value = '';
+                document.getElementById('pedigree').value = '';
+                document.getElementById('edad').value = '';
+            }
+        } else {
+            infoCitaDiv.style.display = 'none';
+            alertaSinTriaje.style.display = 'none';
+            // Limpiar todos los campos de predicción si la cita no se encuentra
+            document.getElementById('embarazos').value = '';
+            document.getElementById('glucosa').value = '';
+            document.getElementById('presion_sanguinea').value = '';
+            document.getElementById('grosor_piel').value = '';
+            document.getElementById('insulina').value = '';
+            document.getElementById('BMI').value = '';
+            document.getElementById('pedigree').value = '';
+            document.getElementById('edad').value = '';
+            document.getElementById('observacion').value = '';
+        }
+        // Ocultar sección de resultado y botón de guardar al cambiar la cita
+        document.getElementById('predictionResultSection').style.display = 'none';
+        document.getElementById('savePredictionForm').style.display = 'none';
     }
 
-    // Si hay una cita pre-seleccionada, mostrar su información
+    // Inicializar al cargar la página si ya hay una cita seleccionada (ej. por URL)
     document.addEventListener('DOMContentLoaded', function() {
         const selectCita = document.getElementById('idcita');
         if (selectCita.value) {
-            mostrarInfoCita(selectCita.value);
+            cargarDatosTriaje(selectCita.value);
         }
-    });
 
-    // Función para mostrar la información del triaje
-    function mostrarInfoTriaje(triaje) {
-        if (triaje) {
-            document.getElementById('triajeGrosorPiel').textContent = triaje.grosor_piel || '-';
-            document.getElementById('triajeEdad').textContent = triaje.edad || '-';
-            document.getElementById('triajeBMI').textContent = triaje.BMI || '-';
-        }
-    }
+        // --- Lógica AJAX para la predicción ---
+        const predictionForm = document.getElementById('predictionForm');
+        const predictBtn = document.getElementById('predictBtn');
+        const predictBtnText = document.getElementById('predictBtnText');
+        const predictSpinner = document.getElementById('predictSpinner');
+        const predictLoadingText = document.getElementById('predictLoadingText');
+        const predictionResultSection = document.getElementById('predictionResultSection');
+        const predictionResultContent = document.getElementById('predictionResultContent');
+        const savePredictionForm = document.getElementById('savePredictionForm');
 
-    // Si hay un triaje pre-seleccionado, mostrar su información
-    @if(isset($triaje))
-    document.addEventListener('DOMContentLoaded', function() {
-        mostrarInfoTriaje({
-            grosor_piel: '{{ $triaje->grosor_piel }}',
-            edad: '{{ $triaje->edad }}',
-            BMI: '{{ $triaje->BMI }}'
+        predictionForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevenir el envío normal del formulario
+
+            // Mostrar spinner y deshabilitar botón
+            predictBtn.disabled = true;
+            predictBtnText.classList.add('d-none');
+            predictSpinner.classList.remove('d-none');
+            predictLoadingText.classList.remove('d-none');
+            predictionResultSection.style.display = 'none'; // Ocultar resultados anteriores
+            savePredictionForm.style.display = 'none'; // Ocultar botón de guardar
+
+            const formData = new FormData(predictionForm);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            try {
+                const response = await fetch(predictionForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                // Manejar errores de validación de Laravel (si el backend devuelve 422)
+                if (response.status === 422) {
+                    let errorsHtml = '<div class="alert alert-danger mb-0"><ul>';
+                    for (let key in result.errors) {
+                        result.errors[key].forEach(error => {
+                            errorsHtml += `<li>${error}</li>`;
+                        });
+                    }
+                    errorsHtml += '</ul></div>';
+                    // Inyectar errores al inicio del card body
+                    document.querySelector('.card-body').insertAdjacentHTML('afterbegin', errorsHtml);
+                    return; // Detener la ejecución
+                }
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error en la predicción.');
+                }
+
+                // Mostrar el resultado de la predicción
+                const prediction = result.predictionResult.prediction;
+                const diagnosis = result.predictionResult.diagnosis;
+                const probNoDiabetes = (result.predictionResult.probability_no_diabetes * 100).toFixed(2);
+                const probDiabetes = (result.predictionResult.probability_diabetes * 100).toFixed(2);
+
+                let alertClass = prediction === 1 ? 'alert-danger' : 'alert-success';
+
+                predictionResultContent.innerHTML = `
+                    <div class="alert ${alertClass}" role="alert">
+                        <p class="h5">Diagnóstico: <strong>${diagnosis}</strong></p>
+                        <p>Probabilidad de NO Diabetes: <strong>${probNoDiabetes}%</strong></p>
+                        <p>Probabilidad de SÍ Diabetes: <strong>${probDiabetes}%</strong></p>
+                    </div>
+                `;
+                predictionResultSection.style.display = 'block';
+                savePredictionForm.style.display = 'block'; // Mostrar el botón de guardar
+
+                // Llenar los campos ocultos del formulario de guardar
+                document.getElementById('save_idcita').value = data.idcita;
+                document.getElementById('save_embarazos').value = data.embarazos;
+                document.getElementById('save_glucosa').value = data.glucosa;
+                document.getElementById('save_presion_sanguinea').value = data.presion_sanguinea;
+                document.getElementById('save_grosor_piel').value = data.grosor_piel;
+                document.getElementById('save_insulina').value = data.insulina;
+                document.getElementById('save_BMI').value = data.BMI;
+                document.getElementById('save_pedigree').value = data.pedigree;
+                document.getElementById('save_edad').value = data.edad;
+                document.getElementById('save_observacion').value = data.observacion;
+                
+                document.getElementById('save_probability_diabetes').value = result.predictionResult.probability_diabetes;
+                document.getElementById('save_prediction_label').value = result.predictionResult.prediction;
+                document.getElementById('save_diagnosis').value = result.predictionResult.diagnosis;
+
+            } catch (error) {
+                console.error('Error:', error);
+                predictionResultContent.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        Ocurrió un error al realizar la predicción: ${error.message}. Por favor, revise los datos o inténtelo más tarde.
+                    </div>
+                `;
+                predictionResultSection.style.display = 'block';
+                savePredictionForm.style.display = 'none'; // No mostrar el botón de guardar si hay error
+            } finally {
+                // Ocultar spinner y habilitar botón
+                predictBtn.disabled = false;
+                predictBtnText.classList.remove('d-none');
+                predictSpinner.classList.add('d-none');
+                predictLoadingText.classList.add('d-none');
+            }
         });
     });
-    @endif
-
-    // Función para mostrar la información del paciente
-    function mostrarInfoPaciente(paciente) {
-        if (paciente) {
-            document.getElementById('pacienteSexo').textContent = paciente.sexo || '-';
-            document.getElementById('pacienteTelefono').textContent = paciente.telefono || '-';
-            document.getElementById('pacienteDNI').textContent = paciente.DNI || '-';
-        }
-    }
-
-    // Si hay un paciente pre-seleccionado, mostrar su información
-    @if(isset($paciente))
-    document.addEventListener('DOMContentLoaded', function() {
-        mostrarInfoPaciente({
-            sexo: '{{ $paciente->sexo }}',
-            telefono: '{{ $paciente->telefono }}',
-            DNI: '{{ $paciente->DNI }}',
-        });
-    });
-    @endif
 </script>
 @endsection

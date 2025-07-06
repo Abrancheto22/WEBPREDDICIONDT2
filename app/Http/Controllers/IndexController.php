@@ -11,7 +11,7 @@ use App\Models\Doctor;
 use App\Models\Enfermera;
 use App\Models\Paciente;
 
-class IndexController
+class IndexController extends Controller
 {
     public function index()
     {

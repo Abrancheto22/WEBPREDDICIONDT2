@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class DoctorController
+class DoctorController extends Controller
 {
     public function index()
     {

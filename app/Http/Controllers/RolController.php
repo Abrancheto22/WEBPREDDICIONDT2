@@ -6,7 +6,7 @@ use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class RolController
+class RolController extends Controller
 {
     /**
      * Display a listing of the resource.
