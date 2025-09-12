@@ -105,8 +105,12 @@
                                     {{ $prediccion->resultado >= 0.5 ? 'Positivo' : 'Negativo' }}
                                 </span>
                             </div>
+                            <div class="col-12 mb-2">
+                                <strong>Observaciones:</strong> {{ $prediccion->observacion }}
+                            </div>
                         </div>
                     </div>
+                    
 
                     <div class="mt-4">
                         <a href="{{ route('predicciones.index') }}" class="btn btn-secondary">Volver</a>

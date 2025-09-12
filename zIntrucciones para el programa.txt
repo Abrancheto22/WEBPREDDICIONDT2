@@ -1,0 +1,7 @@
+Terminal 1
+cd ml_api
+venv\Scripts\activate
+python app.py
+
+Terminal 2
+php artisan serve

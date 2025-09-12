@@ -2,7 +2,31 @@
 
 @section('title', 'Realizar Análisis')
 
+@push('styles')
+<style>
+    #timer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-weight: bold;
+        z-index: 1000;
+    }
+    .modal-timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+        margin: 15px 0;
+        color: #0d6efd;
+    }
+</style>
+@endpush
+
 @section('content')
+<div id="timer" class="d-none">Tiempo: <span id="time-display">00:00:00</span></div>
 <div class="container mt-4">
     <div class="card">
         <div class="card-header">
@@ -222,6 +246,7 @@
                     <input type="hidden" name="pedigree" id="save_pedigree">
                     <input type="hidden" name="edad" id="save_edad">
                     <input type="hidden" name="observacion" id="save_observacion">
+                    <input type="hidden" name="timer" id="save_timer">
                     
                     {{-- Hidden inputs para los resultados de la predicción --}}
                     <input type="hidden" name="probability_diabetes" id="save_probability_diabetes">
@@ -331,13 +356,60 @@
         const predictionResultContent = document.getElementById('predictionResultContent');
         const savePredictionForm = document.getElementById('savePredictionForm');
 
+        // Inicializar el temporizador cuando se carga la página
+        let startTime = new Date();
+        let timerInterval;
+        const timerElement = document.getElementById('timer');
+        const timeDisplay = document.getElementById('time-display');
+        
+        // Mostrar el temporizador
+        timerElement.classList.remove('d-none');
+        
+        // Actualizar el temporizador cada 10 milisegundos para mayor precisión
+        function updateTimer() {
+            const now = new Date();
+            const elapsed = now - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const milliseconds = Math.floor((elapsed % 1000) / 10);
+            
+            timeDisplay.textContent = 
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0') + ':' +
+                String(milliseconds).padStart(2, '0');
+        }
+        
+        // Iniciar el temporizador con actualización cada 10ms para mayor precisión
+        timerInterval = setInterval(updateTimer, 10);
+        updateTimer(); // Llamar inmediatamente para evitar retraso inicial
+
+        // Crear un campo oculto para el temporizador
+        const timerInput = document.createElement('input');
+        timerInput.type = 'hidden';
+        timerInput.name = 'timer';
+        predictionForm.appendChild(timerInput);
+
         predictionForm.addEventListener('submit', async function(event) {
             event.preventDefault(); // Prevenir el envío normal del formulario
-
+            
+            // Detener el temporizador
+            clearInterval(timerInterval);
+            
+            // Mostrar el tiempo transcurrido en un modal
+            const elapsedTime = timeDisplay.textContent;
+            const timerModal = new bootstrap.Modal(document.getElementById('timerModal'));
+            document.getElementById('elapsed-time').textContent = elapsedTime;
+            
+            // Actualizar el valor del campo oculto con el tiempo transcurrido
+            timerInput.value = elapsedTime;
+            
             // Mostrar spinner y deshabilitar botón
             predictBtn.disabled = true;
             predictBtnText.classList.add('d-none');
             predictSpinner.classList.remove('d-none');
+            
+            // Mostrar el modal
+            timerModal.show();
             predictLoadingText.classList.remove('d-none');
             predictionResultSection.style.display = 'none'; // Ocultar resultados anteriores
             savePredictionForm.style.display = 'none'; // Ocultar botón de guardar
@@ -408,6 +480,8 @@
                 document.getElementById('save_pedigree').value = data.pedigree;
                 document.getElementById('save_edad').value = data.edad;
                 document.getElementById('save_observacion').value = data.observacion;
+                document.getElementById('save_timer').value = timeDisplay.textContent;
+                              
                 
                 document.getElementById('save_probability_diabetes').value = result.predictionResult.probability_diabetes;
                 document.getElementById('save_prediction_label').value = result.predictionResult.prediction;
@@ -432,4 +506,24 @@
         });
     });
 </script>
+
+<!-- Modal para mostrar el tiempo transcurrido -->
+<div class="modal fade" id="timerModal" tabindex="-1" aria-labelledby="timerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="timerModalLabel">Tiempo de Análisis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>¡Análisis completado en:</p>
+                <div class="modal-timer" id="elapsed-time">00:00:00</div>
+                <p>Gracias por utilizar nuestro sistema de predicción.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

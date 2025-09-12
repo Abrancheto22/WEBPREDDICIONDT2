@@ -21,7 +21,8 @@ class Prediccion extends Model
         'edad',
         'insulina',
         'resultado',
-        'observacion'
+        'observacion',
+        'timer'
     ];
     
     protected $hidden = [

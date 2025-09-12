@@ -74,8 +74,6 @@ class PrediccionController extends Controller
                 'success' => true,
                 'message' => 'Predicción obtenida con éxito',
                 'predictionResult' => $predictionResult,
-                // Puedes devolver también los datos originales si los necesitas en JS
-                // 'inputData' => $validated
             ]);
 
         } catch (ValidationException $e) {
@@ -103,11 +101,7 @@ class PrediccionController extends Controller
             ], 500);
         }
     }
-
-    // El método saveConfirmedPrediction es el mismo que te di en la respuesta anterior.
-    // Solo asegúrate de que el request->validate para saveConfirmedPrediction
-    // tenga los campos 'probability_diabetes', 'prediction_label', y 'diagnosis'
-    // ya que vienen de los hidden inputs del segundo formulario.
+    
     public function saveConfirmedPrediction(Request $request)
     {
         $validated = $request->validate([
@@ -122,6 +116,7 @@ class PrediccionController extends Controller
             'edad' => 'required|numeric|min:0',
             'observacion' => 'nullable|string',
             'probability_diabetes' => 'required|numeric|min:0|max:1',
+            'timer' => 'required|string', // Asegurando que el campo timer esté presente
         ]);
 
         try {
@@ -137,6 +132,7 @@ class PrediccionController extends Controller
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
             $prediccion->resultado = $validated['probability_diabetes']; // Guardar la probabilidad
+            $prediccion->timer = $validated['timer']; // Guardar el tiempo del temporizador
             $prediccion->save();
 
             // Actualizar el estado de la cita
@@ -247,13 +243,14 @@ class PrediccionController extends Controller
             'pedigree' => 'required|numeric|min:0',
             'edad' => 'required|numeric|min:0',
             'observacion' => 'nullable|string',
+            'timer' => 'required|string',
             'probability_diabetes' => 'required|numeric|min:0|max:1',
         ]);
 
         try {
-            $prediccion = Prediccion::findOrFail($idprediccion); // Encuentra la predicción existente
+            $prediccion = Prediccion::findOrFail($idprediccion);
 
-            $prediccion->idcita = $validated['idcita']; // Aunque es readonly, se re-asigna
+            $prediccion->idcita = $validated['idcita'];
             $prediccion->embarazos = $validated['embarazos'];
             $prediccion->glucosa = $validated['glucosa'];
             $prediccion->presion_sanguinea = $validated['presion_sanguinea'];
@@ -263,16 +260,9 @@ class PrediccionController extends Controller
             $prediccion->pedigree = $validated['pedigree'];
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
-            $prediccion->resultado = $validated['probability_diabetes']; // Actualiza con la nueva probabilidad
-            $prediccion->save(); // Guarda los cambios
-
-            // Actualizar el estado de la cita si es necesario (ej. a 'completada' o 'revisada')
-            // Este es un ejemplo, ajusta la lógica según tu flujo de negocio
-            // $cita = Cita::find($validated['idcita']);
-            // if ($cita) {
-            //     $cita->estado = 'revisada';
-            //     $cita->save();
-            // }
+            $prediccion->timer = $validated['timer'];
+            $prediccion->resultado = $validated['probability_diabetes'];
+            $prediccion->save();
 
             return redirect()->route('predicciones.index')->with('success', 'Predicción actualizada exitosamente con nuevos resultados de ML.');
 

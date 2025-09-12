@@ -115,11 +115,11 @@
                       </svg>
                     </span>
                   </span>
-                  <span class="app-brand-text demo text-heading fw-bold">Sneat</span>
+                  <span class="app-brand-text demo text-heading fw-bold">WebDT2</span>
                 </a>
               </div>
               <!-- /Logo -->
-              <h4 class="mb-1">Bienvenido a Sneat! 👋</h4>
+              <h4 class="mb-1">Bienvenido a WebDT2! 👋</h4>
               <p class="mb-6">Te invitamos a formar parte de esta familia. Por favor, inicia sesión para continuar</p>
 
               <form id="formAuthentication" class="mb-6" action="{{ route('login') }}" method="POST">
