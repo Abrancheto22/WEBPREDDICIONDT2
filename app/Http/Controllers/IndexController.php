@@ -20,7 +20,41 @@ class IndexController extends Controller
 
     public function dashboard()
     {
-        return view('index');
+        // Obtener todos los registros de predicción con sus timers
+        $predicciones = \App\Models\Prediccion::all(['timer']);
+        
+        // Para depuración: Pasar los valores crudos a la vista
+        $valoresTimer = [];
+        $suma = 0;
+        
+        foreach ($predicciones as $prediccion) {
+            $valor = $prediccion->timer;
+            $valoresTimer[] = $valor;
+            
+            // Intentar convertir a número
+            $valorNumerico = 0;
+            if (is_numeric($valor)) {
+                $valorNumerico = (float)$valor;
+            } elseif (is_string($valor)) {
+                // Reemplazar comas por puntos y quitar espacios
+                $valor = str_replace(',', '.', trim($valor));
+                if (is_numeric($valor)) {
+                    $valorNumerico = (float)$valor;
+                }
+            }
+            
+            $suma += $valorNumerico;
+        }
+        
+        $totalPredicciones = count($predicciones);
+        $tiempoPromedio = $totalPredicciones > 0 ? $suma / $totalPredicciones : 0;
+        
+        return view('index', [
+            'totalTiempoPrediccion' => $suma,
+            'totalPredicciones' => $totalPredicciones,
+            'tiempoPromedio' => $tiempoPromedio,
+            'valoresTimer' => $valoresTimer // Solo para depuración
+        ]);
     }
 
     public function settings()

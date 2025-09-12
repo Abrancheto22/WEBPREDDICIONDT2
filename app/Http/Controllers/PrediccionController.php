@@ -132,7 +132,13 @@ class PrediccionController extends Controller
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
             $prediccion->resultado = $validated['probability_diabetes']; // Guardar la probabilidad
-            $prediccion->timer = $validated['timer']; // Guardar el tiempo del temporizador
+            // Convertir tiempo de formato MM:SS:ms a segundos con decimales
+            $timeParts = explode(':', $validated['timer']);
+            $minutes = (int)$timeParts[0];
+            $seconds = (int)$timeParts[1];
+            $milliseconds = (int)$timeParts[2];
+            $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
+            $prediccion->timer = $totalSeconds; // Guardar el tiempo en segundos con decimales
             $prediccion->save();
 
             // Actualizar el estado de la cita
@@ -260,7 +266,13 @@ class PrediccionController extends Controller
             $prediccion->pedigree = $validated['pedigree'];
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
-            $prediccion->timer = $validated['timer'];
+            // Convertir tiempo de formato MM:SS:ms a segundos con decimales
+            $timeParts = explode(':', $validated['timer']);
+            $minutes = (int)$timeParts[0];
+            $seconds = (int)$timeParts[1];
+            $milliseconds = (int)$timeParts[2];
+            $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
+            $prediccion->timer = $totalSeconds; // Guardar el tiempo en segundos con decimales
             $prediccion->resultado = $validated['probability_diabetes'];
             $prediccion->save();
 

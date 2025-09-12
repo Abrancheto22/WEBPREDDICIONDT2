@@ -369,7 +369,8 @@
                 document.getElementById('save_pedigree').value = document.getElementById('pedigree').value;
                 document.getElementById('save_edad').value = document.getElementById('edad').value;
                 document.getElementById('save_observacion').value = document.getElementById('observacion').value;
-                document.getElementById('save_timer').value = timerInput.value;
+                document.getElementById('save_timer').value = timeDisplay.textContent;
+                
                 // Los resultados de la ML se toman de la respuesta
                 document.getElementById('save_probability_diabetes').value = result.predictionResult.probability_diabetes;
                 document.getElementById('save_prediction_label').value = result.predictionResult.prediction;
