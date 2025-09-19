@@ -41,14 +41,14 @@ class PrediccionController extends Controller
             // Validar los datos de entrada
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
-                'embarazos' => 'required|numeric|min:0',
-                'glucosa' => 'required|numeric|min:0',
-                'presion_sanguinea' => 'required|numeric|min:0',
+                'embarazos' => 'required|numeric|min:0|max:500',
+                'glucosa' => 'required|numeric|min:0|max:500', 
+                'presion_sanguinea' => 'required|numeric|min:0|max:180',
                 'grosor_piel' => 'required|numeric|min:0',
-                'insulina' => 'required|numeric|min:0',
-                'BMI' => 'required|numeric|min:0',
-                'pedigree' => 'required|numeric|min:0',
-                'edad' => 'required|numeric|min:0',
+                'insulina' => 'required|numeric|min:0|max:200',
+                'BMI' => 'required|numeric|min:0|max:180',
+                'pedigree' => 'required|numeric|min:0|max:2',
+                'edad' => 'required|numeric|min:18',
                 'observacion' => 'nullable|string',
             ]);
 
@@ -107,16 +107,16 @@ class PrediccionController extends Controller
         $validated = $request->validate([
             'idcita' => 'required|exists:cita,idcita',
             'embarazos' => 'required|numeric|min:0',
-            'glucosa' => 'required|numeric|min:0',
-            'presion_sanguinea' => 'required|numeric|min:0',
+            'glucosa' => 'required|numeric|min:0|max:500', 
+            'presion_sanguinea' => 'required|numeric|min:0|max:180',
             'grosor_piel' => 'required|numeric|min:0',
-            'insulina' => 'required|numeric|min:0',
-            'BMI' => 'required|numeric|min:0',
-            'pedigree' => 'required|numeric|min:0',
-            'edad' => 'required|numeric|min:0',
+            'insulina' => 'required|numeric|min:0|max:200',
+            'BMI' => 'required|numeric|min:0|max:180',
+            'pedigree' => 'required|numeric|min:0|max:2',
+            'edad' => 'required|numeric|min:18',
             'observacion' => 'nullable|string',
             'probability_diabetes' => 'required|numeric|min:0|max:1',
-            'timer' => 'required|string', // Asegurando que el campo timer esté presente
+            'timer' => 'required|string',
         ]);
 
         try {
@@ -144,7 +144,7 @@ class PrediccionController extends Controller
             // Actualizar el estado de la cita
             $cita = Cita::find($validated['idcita']);
             if ($cita) {
-                $cita->estado = 'realizado'; // O el estado que corresponda
+                $cita->estado = 'realizado';
                 $cita->save();
             }
 
@@ -176,13 +176,13 @@ class PrediccionController extends Controller
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
                 'embarazos' => 'required|numeric|min:0',
-                'glucosa' => 'required|numeric|min:0',
-                'presion_sanguinea' => 'required|numeric|min:0',
+                'glucosa' => 'required|numeric|min:0|max:500',
+                'presion_sanguinea' => 'required|numeric|min:0|max:180',
                 'grosor_piel' => 'required|numeric|min:0',
-                'insulina' => 'required|numeric|min:0',
-                'BMI' => 'required|numeric|min:0',
-                'pedigree' => 'required|numeric|min:0',
-                'edad' => 'required|numeric|min:0',
+                'insulina' => 'required|numeric|min:0|max:200',
+                'BMI' => 'required|numeric|min:0|max:180',
+                'pedigree' => 'required|numeric|min:0|max:2',
+                'edad' => 'required|numeric|min:18',
                 'observacion' => 'nullable|string',
             ]);
 
@@ -241,13 +241,13 @@ class PrediccionController extends Controller
         $validated = $request->validate([
             'idcita' => 'required|exists:cita,idcita',
             'embarazos' => 'required|numeric|min:0',
-            'glucosa' => 'required|numeric|min:0',
-            'presion_sanguinea' => 'required|numeric|min:0',
+            'glucosa' => 'required|numeric|min:0|max:500',
+            'presion_sanguinea' => 'required|numeric|min:0|max:180',
             'grosor_piel' => 'required|numeric|min:0',
-            'insulina' => 'required|numeric|min:0',
-            'BMI' => 'required|numeric|min:0',
-            'pedigree' => 'required|numeric|min:0',
-            'edad' => 'required|numeric|min:0',
+            'insulina' => 'required|numeric|min:0|max:200',
+            'BMI' => 'required|numeric|min:0|max:180',
+            'pedigree' => 'required|numeric|min:0|max:2',
+            'edad' => 'required|numeric|min:18',
             'observacion' => 'nullable|string',
             'timer' => 'required|string',
             'probability_diabetes' => 'required|numeric|min:0|max:1',
@@ -266,6 +266,7 @@ class PrediccionController extends Controller
             $prediccion->pedigree = $validated['pedigree'];
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
+            
             // Convertir tiempo de formato MM:SS:ms a segundos con decimales
             $timeParts = explode(':', $validated['timer']);
             $minutes = (int)$timeParts[0];
