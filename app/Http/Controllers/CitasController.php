@@ -7,6 +7,8 @@ use App\Models\Cita;
 use App\Models\Paciente;
 use App\Models\Doctor;
 use App\Models\Enfermera;
+use Illuminate\Support\Facades\DB;
+
 
 class CitasController extends Controller
 {

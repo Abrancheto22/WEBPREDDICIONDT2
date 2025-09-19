@@ -35,7 +35,7 @@
                             <td>{{ date('H:i', strtotime($cita->hora_cita)) }}</td>
                             <td>{{ $cita->motivo }}</td>
                             <td>
-                                <span class="badge {{ $cita->estado === 'pendiente' ? 'bg-warning' : ($cita->estado === 'atendida' ? 'bg-success' : 'bg-secondary') }}">
+                                <span class="badge {{ $cita->estado === 'Pendiente' ? 'bg-warning' : ($cita->estado === 'Realizado' ? 'bg-success' : 'bg-secondary') }}">
                                     {{ ucfirst($cita->estado) }}
                                 </span>
                             </td>

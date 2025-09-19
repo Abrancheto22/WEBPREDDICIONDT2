@@ -144,11 +144,11 @@ class PrediccionController extends Controller
             // Actualizar el estado de la cita
             $cita = Cita::find($validated['idcita']);
             if ($cita) {
-                $cita->estado = 'realizado';
+                $cita->estado = 'Realizado';
                 $cita->save();
             }
 
-            return redirect()->route('predicciones.index')->with('success', 'Predicción guardada exitosamente y cita actualizada.');
+            return redirect()->route('citas_doctores.index')->with('success', 'Predicción guardada exitosamente y cita actualizada.');
 
         } catch (\Exception $e) {
             Log::error('Error al guardar la predicción confirmada: ' . $e->getMessage());
