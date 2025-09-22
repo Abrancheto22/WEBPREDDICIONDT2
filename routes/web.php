@@ -11,6 +11,8 @@ use App\Http\Controllers\CitasController;
 use App\Http\Controllers\TriajeController;
 use App\Http\Controllers\PrediccionController;
 use Illuminate\Support\Facades\DB;
+use App\Exports\PrediccionesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 // Rutas de autenticación
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -91,6 +93,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/triajes/{idtriaje}', [TriajeController::class, 'destroy'])->name('triajes.destroy');
 
     /*Rutas de predicciones*/
+    Route::get('/predicciones/exportar', function() {
+        return Excel::download(new PrediccionesExport, 'predicciones.xlsx');
+    })->name('predicciones.exportar');
+    
     Route::get('/predicciones', [PrediccionController::class, 'index'])->name('predicciones.index');
     Route::get('/predicciones/create/{idcita?}', [PrediccionController::class, 'create'])->name('predicciones.create');
     Route::post('/predicciones', [PrediccionController::class, 'store'])->name('predicciones.store');
@@ -100,4 +106,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/predicciones/{idprediccion}', [PrediccionController::class, 'updateConfirmedPrediction'])->name('predicciones.update_confirmed_prediction');
     Route::delete('/predicciones/{idprediccion}', [PrediccionController::class, 'destroy'])->name('predicciones.destroy');
     Route::post('/predicciones/guardar-confirmada', [PrediccionController::class, 'saveConfirmedPrediction'])->name('predicciones.save_confirmed_prediction');
+
+   
 });

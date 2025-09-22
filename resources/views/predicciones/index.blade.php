@@ -6,6 +6,9 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Predicciones</h1>
+        <a href="{{ route('predicciones.exportar') }}" class="btn btn-success">
+            <i class='bx bx-file'></i> Exportar a Excel
+        </a>
     </div>
 
     <div class="card">
