@@ -22,7 +22,9 @@ class Prediccion extends Model
         'insulina',
         'resultado',
         'observacion',
-        'timer'
+        'timer',
+        'timer_inicio', // Agregado
+        'timer_parada', // Agregado
     ];
     
     protected $hidden = [

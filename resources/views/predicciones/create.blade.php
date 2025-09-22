@@ -117,8 +117,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="embarazos" class="form-label">Número de Embarazos</label>
                                 <input type="number" name="embarazos" id="embarazos" 
-                                       class="form-control @error('embarazos') is-invalid @enderror" 
-                                       value="{{ old('embarazos', $cita->triaje->embarazos ?? '') }}" required min="0">
+                                        class="form-control @error('embarazos') is-invalid @enderror" 
+                                        value="{{ old('embarazos', $cita->triaje->embarazos ?? '') }}" required min="0">
                                 @error('embarazos')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -126,8 +126,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="glucosa" class="form-label">Glucosa</label>
                                 <input type="number" step="0.01" name="glucosa" id="glucosa" 
-                                       class="form-control @error('glucosa') is-invalid @enderror" 
-                                       value="{{ old('glucosa', $cita->triaje->glucosa ?? '') }}" required min="0">
+                                        class="form-control @error('glucosa') is-invalid @enderror" 
+                                        value="{{ old('glucosa', $cita->triaje->glucosa ?? '') }}" required min="0">
                                 @error('glucosa')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -138,8 +138,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="presion_sanguinea" class="form-label">Presión Sanguínea</label>
                                 <input type="number" step="0.01" name="presion_sanguinea" id="presion_sanguinea" 
-                                       class="form-control @error('presion_sanguinea') is-invalid @enderror" 
-                                       value="{{ old('presion_sanguinea', $cita->triaje->presion_sanguinea ?? '') }}" required min="0">
+                                        class="form-control @error('presion_sanguinea') is-invalid @enderror" 
+                                        value="{{ old('presion_sanguinea', $cita->triaje->presion_sanguinea ?? '') }}" required min="0">
                                 @error('presion_sanguinea')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -147,8 +147,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="grosor_piel" class="form-label">Grosor de Piel (mm)</label>
                                 <input type="number" step="0.01" name="grosor_piel" id="grosor_piel" 
-                                       class="form-control @error('grosor_piel') is-invalid @enderror" 
-                                       value="{{ old('grosor_piel', $cita->triaje->grosor_piel ?? '') }}" required min="0">
+                                        class="form-control @error('grosor_piel') is-invalid @enderror" 
+                                        value="{{ old('grosor_piel', $cita->triaje->grosor_piel ?? '') }}" required min="0">
                                 @error('grosor_piel')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -159,8 +159,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="insulina" class="form-label">Insulina (mu U/ml)</label>
                                 <input type="number" step="0.01" name="insulina" id="insulina" 
-                                       class="form-control @error('insulina') is-invalid @enderror" 
-                                       value="{{ old('insulina', $cita->triaje->insulina ?? '') }}" required min="0">
+                                        class="form-control @error('insulina') is-invalid @enderror" 
+                                        value="{{ old('insulina', $cita->triaje->insulina ?? '') }}" required min="0">
                                 @error('insulina')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -168,8 +168,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="BMI" class="form-label">BMI (kg/m2)</label>
                                 <input type="number" step="0.01" name="BMI" id="BMI" 
-                                       class="form-control @error('BMI') is-invalid @enderror" 
-                                       value="{{ old('BMI', $cita->triaje->BMI ?? '') }}" required min="0">
+                                        class="form-control @error('BMI') is-invalid @enderror" 
+                                        value="{{ old('BMI', $cita->triaje->BMI ?? '') }}" required min="0">
                                 @error('BMI')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -180,8 +180,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="pedigree" class="form-label">Función Pedigree de Diabetes</label>
                                 <input type="number" step="0.001" name="pedigree" id="pedigree" 
-                                       class="form-control @error('pedigree') is-invalid @enderror" 
-                                       value="{{ old('pedigree', $cita->triaje->pedigree ?? '') }}" required min="0">
+                                        class="form-control @error('pedigree') is-invalid @enderror" 
+                                        value="{{ old('pedigree', $cita->triaje->pedigree ?? '') }}" required min="0">
                                 @error('pedigree')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -189,8 +189,8 @@
                             <div class="col-md-6 mb-3">
                                 <label for="edad" class="form-label">Edad (años)</label>
                                 <input type="number" name="edad" id="edad" 
-                                       class="form-control @error('edad') is-invalid @enderror" 
-                                       value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="0">
+                                        class="form-control @error('edad') is-invalid @enderror" 
+                                        value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="0">
                                 @error('edad')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -200,8 +200,8 @@
                         <div class="mb-3">
                             <label for="observacion" class="form-label">Observación (Opcional)</label>
                             <textarea name="observacion" id="observacion" 
-                                      class="form-control @error('observacion') is-invalid @enderror"
-                                      rows="3">{{ old('observacion') }}</textarea>
+                                        class="form-control @error('observacion') is-invalid @enderror"
+                                        rows="3">{{ old('observacion') }}</textarea>
                             @error('observacion')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -247,6 +247,7 @@
                     <input type="hidden" name="edad" id="save_edad">
                     <input type="hidden" name="observacion" id="save_observacion">
                     <input type="hidden" name="timer" id="save_timer">
+                    <input type="hidden" name="timer_duration_ms" id="save_timer_duration_ms">
                     
                     {{-- Hidden inputs para los resultados de la predicción --}}
                     <input type="hidden" name="probability_diabetes" id="save_probability_diabetes">
@@ -379,38 +380,24 @@
                 String(milliseconds).padStart(2, '0');
         }
         
-        // Iniciar el temporizador con actualización cada 10ms para mayor precisión
+        // Iniciar el temporizador con actualización cada 10ms
         timerInterval = setInterval(updateTimer, 10);
         updateTimer(); // Llamar inmediatamente para evitar retraso inicial
-
-        // Crear un campo oculto para el temporizador
-        const timerInput = document.createElement('input');
-        timerInput.type = 'hidden';
-        timerInput.name = 'timer';
-        predictionForm.appendChild(timerInput);
 
         predictionForm.addEventListener('submit', async function(event) {
             event.preventDefault(); // Prevenir el envío normal del formulario
             
-            // Detener el temporizador
+            // Detener el temporizador y obtener el tiempo transcurrido
             clearInterval(timerInterval);
-            
-            // Mostrar el tiempo transcurrido en un modal
-            const elapsedTime = timeDisplay.textContent;
-            const timerModal = new bootstrap.Modal(document.getElementById('timerModal'));
-            document.getElementById('elapsed-time').textContent = elapsedTime;
-            
-            // Actualizar el valor del campo oculto con el tiempo transcurrido
-            timerInput.value = elapsedTime;
-            
+            const elapsedTime = new Date() - startTime;
+            const elapsedTimeString = timeDisplay.textContent;
+
             // Mostrar spinner y deshabilitar botón
             predictBtn.disabled = true;
             predictBtnText.classList.add('d-none');
             predictSpinner.classList.remove('d-none');
-            
-            // Mostrar el modal
-            timerModal.show();
             predictLoadingText.classList.remove('d-none');
+            
             predictionResultSection.style.display = 'none'; // Ocultar resultados anteriores
             savePredictionForm.style.display = 'none'; // Ocultar botón de guardar
 
@@ -450,13 +437,13 @@
                 if (!response.ok) {
                     throw new Error(result.error || 'Error en la predicción.');
                 }
-
+                
                 // Mostrar el resultado de la predicción
                 const prediction = result.predictionResult.prediction;
                 const diagnosis = result.predictionResult.diagnosis;
                 const probNoDiabetes = (result.predictionResult.probability_no_diabetes * 100).toFixed(2);
                 const probDiabetes = (result.predictionResult.probability_diabetes * 100).toFixed(2);
-
+                
                 let alertClass = prediction === 1 ? 'alert-danger' : 'alert-success';
 
                 predictionResultContent.innerHTML = `
@@ -480,8 +467,10 @@
                 document.getElementById('save_pedigree').value = data.pedigree;
                 document.getElementById('save_edad').value = data.edad;
                 document.getElementById('save_observacion').value = data.observacion;
-                document.getElementById('save_timer').value = timeDisplay.textContent;
-                              
+                
+                // Asignar el tiempo de duración y el tiempo formateado
+                document.getElementById('save_timer').value = elapsedTimeString;
+                document.getElementById('save_timer_duration_ms').value = elapsedTime;
                 
                 document.getElementById('save_probability_diabetes').value = result.predictionResult.probability_diabetes;
                 document.getElementById('save_prediction_label').value = result.predictionResult.prediction;
@@ -507,7 +496,6 @@
     });
 </script>
 
-<!-- Modal para mostrar el tiempo transcurrido -->
 <div class="modal fade" id="timerModal" tabindex="-1" aria-labelledby="timerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

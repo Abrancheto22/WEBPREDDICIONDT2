@@ -7,8 +7,10 @@ use App\Models\Prediccion;
 use App\Models\Cita;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http; // DEBE ESTAR
-use Illuminate\Support\Facades\Log;  // DEBE ESTAR
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session; // Importar la clase Session
+use Illuminate\Validation\ValidationException;
 
 class PrediccionController extends Controller
 {
@@ -19,26 +21,30 @@ class PrediccionController extends Controller
     }
 
     public function create($idcita = null)
-    {
-        if ($idcita) {
-            $cita = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->find($idcita);
-            if (! $cita) {
-                return redirect()->back()->with('error', 'Cita no encontrada');
-            }
-            if (! $cita->triaje) {
-                return redirect()->back()->with('error', 'La cita no tiene un triaje asociado');
-            }
+{
+    if ($idcita) {
+        $cita = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->find($idcita);
+        if (! $cita) {
+            return redirect()->back()->with('error', 'Cita no encontrada');
         }
-        $citas = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->get();
-        return view('predicciones.create', compact('cita', 'citas'))
-            ->with('paciente', $cita ? $cita->paciente : null)
-            ->with('triaje', $cita ? $cita->triaje : null);
+        if (! $cita->triaje) {
+            return redirect()->back()->with('error', 'La cita no tiene un triaje asociado');
+        }
     }
+    $citas = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->get();
+
+    // Capturar el tiempo actual del servidor
+    $startTime = now()->toIso8601String();
+
+    return view('predicciones.create', compact('cita', 'citas'))
+        ->with('paciente', $cita ? $cita->paciente : null)
+        ->with('triaje', $cita ? $cita->triaje : null)
+        ->with('timerInicio', $startTime); // Pasar el tiempo a la vista
+}
 
     public function store(Request $request)
     {
         try {
-            // Validar los datos de entrada
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
                 'embarazos' => 'required|numeric|min:0|max:500',
@@ -52,7 +58,11 @@ class PrediccionController extends Controller
                 'observacion' => 'nullable|string',
             ]);
 
-            $mlApiUrl = 'http://127.0.0.1:5000/predict'; // Asegúrate de que esta URL sea correcta
+            // **1. Capturar el tiempo de inicio y guardarlo en la sesión**
+            $startTime = now();
+            Session::put('prediccion_start_time', $startTime);
+
+            $mlApiUrl = 'http://127.0.0.1:5000/predict';
 
             $response = Http::post($mlApiUrl, [
                 'Pregnancies' => (float)$validated['embarazos'],
@@ -65,11 +75,10 @@ class PrediccionController extends Controller
                 'Age' => (float)$validated['edad'],
             ]);
 
-            $response->throw(); // Lanza una excepción si la respuesta tiene un error de cliente o servidor
+            $response->throw();
 
             $predictionResult = $response->json();
 
-            // Devolver la respuesta como JSON
             return response()->json([
                 'success' => true,
                 'message' => 'Predicción obtenida con éxito',
@@ -77,14 +86,12 @@ class PrediccionController extends Controller
             ]);
 
         } catch (ValidationException $e) {
-            // Si hay errores de validación de Laravel, devolverlos como JSON 422
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Illuminate\Http\Client\RequestException $e) {
-            // Error al conectar con la API de ML
             Log::error('Error al conectar con la API de ML: ' . $e->getMessage(), ['url' => $mlApiUrl, 'response' => $e->response ? $e->response->body() : 'N/A']);
             return response()->json([
                 'success' => false,
@@ -92,7 +99,6 @@ class PrediccionController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         } catch (\Exception $e) {
-            // Otros errores inesperados
             Log::error('Error inesperado al procesar la predicción: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
@@ -117,6 +123,7 @@ class PrediccionController extends Controller
             'observacion' => 'nullable|string',
             'probability_diabetes' => 'required|numeric|min:0|max:1',
             'timer' => 'required|string',
+            'timer_duration_ms' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -131,17 +138,24 @@ class PrediccionController extends Controller
             $prediccion->pedigree = $validated['pedigree'];
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
-            $prediccion->resultado = $validated['probability_diabetes']; // Guardar la probabilidad
-            // Convertir tiempo de formato MM:SS:ms a segundos con decimales
+            $prediccion->resultado = $validated['probability_diabetes'];
+            
+            // **Cálculo del timer_parada y timer_inicio**
+            $stopTime = now();
+            $startTime = now()->subMilliseconds($validated['timer_duration_ms']);
+            
+            $prediccion->timer_inicio = $startTime;
+            $prediccion->timer_parada = $stopTime;
+
             $timeParts = explode(':', $validated['timer']);
             $minutes = (int)$timeParts[0];
             $seconds = (int)$timeParts[1];
             $milliseconds = (int)$timeParts[2];
             $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
-            $prediccion->timer = $totalSeconds; // Guardar el tiempo en segundos con decimales
+            $prediccion->timer = $totalSeconds;
+
             $prediccion->save();
 
-            // Actualizar el estado de la cita
             $cita = Cita::find($validated['idcita']);
             if ($cita) {
                 $cita->estado = 'Realizado';
@@ -150,11 +164,13 @@ class PrediccionController extends Controller
 
             return redirect()->route('citas_doctores.index')->with('success', 'Predicción guardada exitosamente y cita actualizada.');
 
+        } catch (ValidationException $e) {
+            return redirect()->back()->withInput()->with('error', 'Error de validación: ' . $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Error al guardar la predicción confirmada: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Error al guardar la predicción. Detalles: ' . $e->getMessage());
         }
-    }   
+    } 
 
     public function show($idprediccion)
     {
@@ -164,7 +180,6 @@ class PrediccionController extends Controller
 
     public function edit($idprediccion)
     {
-        // Asegúrate de cargar las relaciones necesarias para la vista
         $prediccion = Prediccion::with(['cita.paciente', 'cita.triaje'])->findOrFail($idprediccion);
         return view('predicciones.edit', compact('prediccion'));
     }
@@ -172,7 +187,6 @@ class PrediccionController extends Controller
     public function processEditedPrediction(Request $request, $idprediccion)
     {
         try {
-            // Validar los datos de entrada (los mismos que en store)
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
                 'embarazos' => 'required|numeric|min:0',
@@ -186,7 +200,11 @@ class PrediccionController extends Controller
                 'observacion' => 'nullable|string',
             ]);
 
-            $mlApiUrl = 'http://127.0.0.1:5000/predict'; // Asegúrate de que esta URL sea correcta
+            // Capturar el tiempo de inicio para la re-predicción
+            $startTime = now();
+            Session::put('prediccion_start_time', $startTime);
+
+            $mlApiUrl = 'http://127.0.0.1:5000/predict';
 
             $response = Http::post($mlApiUrl, [
                 'Pregnancies' => (float)$validated['embarazos'],
@@ -199,11 +217,10 @@ class PrediccionController extends Controller
                 'Age' => (float)$validated['edad'],
             ]);
 
-            $response->throw(); // Lanza una excepción si la respuesta tiene un error de cliente o servidor
+            $response->throw();
 
             $predictionResult = $response->json();
 
-            // Devolver la respuesta como JSON
             return response()->json([
                 'success' => true,
                 'message' => 'Re-predicción obtenida con éxito',
@@ -231,13 +248,8 @@ class PrediccionController extends Controller
         }
     }
 
-    /**
-     * Guarda la predicción editada y confirmada en la base de datos.
-     * Este método reemplaza la lógica original del método 'update'.
-     */
     public function updateConfirmedPrediction(Request $request, $idprediccion)
     {
-        // Validar todos los datos, incluyendo los resultados de la ML
         $validated = $request->validate([
             'idcita' => 'required|exists:cita,idcita',
             'embarazos' => 'required|numeric|min:0',
@@ -256,6 +268,12 @@ class PrediccionController extends Controller
         try {
             $prediccion = Prediccion::findOrFail($idprediccion);
 
+            // Obtener el tiempo de inicio de la sesión
+            $startTime = Session::pull('prediccion_start_time');
+
+            // Capturar el tiempo de parada para la actualización
+            $stopTime = now();
+
             $prediccion->idcita = $validated['idcita'];
             $prediccion->embarazos = $validated['embarazos'];
             $prediccion->glucosa = $validated['glucosa'];
@@ -267,18 +285,28 @@ class PrediccionController extends Controller
             $prediccion->edad = $validated['edad'];
             $prediccion->observacion = $validated['observacion'];
             
-            // Convertir tiempo de formato MM:SS:ms a segundos con decimales
             $timeParts = explode(':', $validated['timer']);
             $minutes = (int)$timeParts[0];
             $seconds = (int)$timeParts[1];
             $milliseconds = (int)$timeParts[2];
             $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
-            $prediccion->timer = $totalSeconds; // Guardar el tiempo en segundos con decimales
+            $prediccion->timer = $totalSeconds;
             $prediccion->resultado = $validated['probability_diabetes'];
+            
+            // Asignar los campos de fecha y hora
+            if ($startTime) {
+                $prediccion->timer_inicio = $startTime;
+                $prediccion->timer_parada = $stopTime;
+            } else {
+                Log::warning('No se pudo encontrar el tiempo de inicio en la sesión para la edición de la predicción ' . $idprediccion);
+            }
+
             $prediccion->save();
 
             return redirect()->route('predicciones.index')->with('success', 'Predicción actualizada exitosamente con nuevos resultados de ML.');
 
+        } catch (ValidationException $e) {
+            return redirect()->back()->withInput()->with('error', 'Error de validación: ' . $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Error al guardar la predicción editada y confirmada: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Error al guardar los cambios en la predicción. Detalles: ' . $e->getMessage());
