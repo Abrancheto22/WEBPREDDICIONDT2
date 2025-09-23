@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session; // Importar la clase Session
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon; // Importar la clase Carbon
 
 class PrediccionController extends Controller
 {
@@ -250,29 +251,29 @@ class PrediccionController extends Controller
 
     public function updateConfirmedPrediction(Request $request, $idprediccion)
     {
-        $validated = $request->validate([
-            'idcita' => 'required|exists:cita,idcita',
-            'embarazos' => 'required|numeric|min:0',
-            'glucosa' => 'required|numeric|min:0|max:500',
-            'presion_sanguinea' => 'required|numeric|min:0|max:180',
-            'grosor_piel' => 'required|numeric|min:0',
-            'insulina' => 'required|numeric|min:0|max:200',
-            'BMI' => 'required|numeric|min:0|max:180',
-            'pedigree' => 'required|numeric|min:0|max:2',
-            'edad' => 'required|numeric|min:18',
-            'observacion' => 'nullable|string',
-            'timer' => 'required|string',
-            'probability_diabetes' => 'required|numeric|min:0|max:1',
-        ]);
-
         try {
+            $validated = $request->validate([
+                'idcita' => 'required|exists:cita,idcita',
+                'embarazos' => 'required|numeric|min:0',
+                'glucosa' => 'required|numeric|min:0|max:500',
+                'presion_sanguinea' => 'required|numeric|min:0|max:180',
+                'grosor_piel' => 'required|numeric|min:0',
+                'insulina' => 'required|numeric|min:0|max:200',
+                'BMI' => 'required|numeric|min:0|max:180',
+                'pedigree' => 'required|numeric|min:0|max:2',
+                'edad' => 'required|numeric|min:18',
+                'observacion' => 'nullable|string',
+                'timer' => 'required|string',
+                'probability_diabetes' => 'required|numeric|min:0|max:1',
+                // Agregamos este campo para un cálculo robusto
+                'timer_duration_ms' => 'required|numeric|min:0', 
+            ]);
+
             $prediccion = Prediccion::findOrFail($idprediccion);
 
-            // Obtener el tiempo de inicio de la sesión
-            $startTime = Session::pull('prediccion_start_time');
-
-            // Capturar el tiempo de parada para la actualización
+            // Reemplazamos la dependencia de la sesión con un cálculo directo
             $stopTime = now();
+            $startTime = now()->subMilliseconds($validated['timer_duration_ms']);
 
             $prediccion->idcita = $validated['idcita'];
             $prediccion->embarazos = $validated['embarazos'];
@@ -294,22 +295,30 @@ class PrediccionController extends Controller
             $prediccion->resultado = $validated['probability_diabetes'];
             
             // Asignar los campos de fecha y hora
-            if ($startTime) {
-                $prediccion->timer_inicio = $startTime;
-                $prediccion->timer_parada = $stopTime;
-            } else {
-                Log::warning('No se pudo encontrar el tiempo de inicio en la sesión para la edición de la predicción ' . $idprediccion);
-            }
+            $prediccion->timer_inicio = $startTime;
+            $prediccion->timer_parada = $stopTime;
 
             $prediccion->save();
-
-            return redirect()->route('predicciones.index')->with('success', 'Predicción actualizada exitosamente con nuevos resultados de ML.');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Predicción actualizada exitosamente con nuevos resultados de ML.',
+                'redirect' => route('predicciones.index')
+            ]);
 
         } catch (ValidationException $e) {
-            return redirect()->back()->withInput()->with('error', 'Error de validación: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Error al guardar la predicción editada y confirmada: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Error al guardar los cambios en la predicción. Detalles: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al guardar los cambios en la predicción. Detalles: ' . $e->getMessage(),
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
     
