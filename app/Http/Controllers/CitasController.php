@@ -145,22 +145,32 @@ class CitasController extends Controller
         }
     }
 
-    public function index_doctores()
-    {
-        $citas = Cita::with(['paciente', 'doctor', 'enfermera', 'triaje'])
-            ->get()
-            ->map(function ($cita) {
-                return $cita
-                    ->setAttribute('paciente_nombre', $cita->paciente ? $cita->paciente->nombre : 'N/A')
-                    ->setAttribute('paciente_apellido', $cita->paciente ? $cita->paciente->apellido : 'N/A')
-                    ->setAttribute('doctor_nombre', $cita->doctor ? $cita->doctor->nombre : 'N/A')
-                    ->setAttribute('doctor_apellido', $cita->doctor ? $cita->doctor->apellido : 'N/A')
-                    ->setAttribute('enfermera_nombre', $cita->enfermera ? $cita->enfermera->nombre : 'N/A')
-                    ->setAttribute('enfermera_apellido', $cita->enfermera ? $cita->enfermera->apellido : 'N/A')
-                    ->setAttribute('tiene_triaje', $cita->triaje ? true : false)
-                    ->setAttribute('idtriaje', $cita->triaje ? $cita->triaje->idtriaje : null);
-            });
-        
-        return view('citas_doctores.index', compact('citas'));
+    public function index_doctores(Request $request)
+{
+    // Start with the base query for the citas.
+    $citasQuery = Cita::with(['paciente', 'doctor', 'enfermera', 'triaje']);
+
+    // Check if the 'estado' filter is present in the request and not empty.
+    if ($request->has('estado') && !empty($request->estado)) {
+        // Apply the where clause to filter by the specified estado.
+        $citasQuery->where('estado', $request->estado);
     }
+
+    // Now, get the filtered citas and apply the mapping logic.
+    $citas = $citasQuery->get()->map(function ($cita) {
+        return $cita
+            ->setAttribute('paciente_nombre', $cita->paciente ? $cita->paciente->nombre : 'N/A')
+            ->setAttribute('paciente_apellido', $cita->paciente ? $cita->paciente->apellido : 'N/A')
+            ->setAttribute('doctor_nombre', $cita->doctor ? $cita->doctor->nombre : 'N/A')
+            ->setAttribute('doctor_apellido', $cita->doctor ? $cita->doctor->apellido : 'N/A')
+            ->setAttribute('enfermera_nombre', $cita->enfermera ? $cita->enfermera->nombre : 'N/A')
+            ->setAttribute('enfermera_apellido', $cita->enfermera ? $cita->enfermera->apellido : 'N/A')
+            ->setAttribute('tiene_triaje', $cita->triaje ? true : false)
+            ->setAttribute('idtriaje', $cita->triaje ? $cita->triaje->idtriaje : null);
+    });
+
+    // Pass the filtered data to the view, along with the selected estado to maintain the filter state in the dropdown.
+    $selectedEstado = $request->estado;
+    return view('citas_doctores.index', compact('citas', 'selectedEstado'));
+}
 }

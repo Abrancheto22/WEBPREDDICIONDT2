@@ -19,15 +19,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Cita</th>
-                            <th>Glucosa</th>
-                            <th>Presión</th>
-                            <th>Grosor Piel</th>
-                            <th>Embarazos</th>
-                            <th>BMI</th>
-                            <th>Pedigree</th>
-                            <th>Edad</th>
                             <th>Resultado</th>
-                            <th>Observación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -36,15 +28,7 @@
                         <tr>
                             <td>{{ $prediccion->idprediccion }}</td>
                             <td>{{ $prediccion->cita->idcita }}</td>
-                            <td>{{ $prediccion->glucosa }}</td>
-                            <td>{{ $prediccion->presion_sanguinea }}</td>
-                            <td>{{ $prediccion->grosor_piel }}</td>
-                            <td>{{ $prediccion->embarazos }}</td>
-                            <td>{{ $prediccion->BMI }}</td>
-                            <td>{{ number_format($prediccion->pedigree, 2) }}</td>
-                            <td>{{ $prediccion->edad }}</td>
                             <td>{{number_format($prediccion->resultado, 2) }}</td>
-                            <td>{{ $prediccion->observacion }}</td>
                             <td>
                                 <div class="btn-group">
                                     <a href="{{ route('predicciones.show', $prediccion->idprediccion) }}" class="btn btn-sm btn-info">

@@ -8,6 +8,20 @@
         <h1>Citas Médicas</h1>
     </div>
 
+    {{-- Filtro de Estado con estilo de Bootstrap --}}
+    <div class="mb-3">
+        <form action="{{ route('citas_doctores.index') }}" method="GET" class="d-flex align-items-center">
+            <div class="form-group mb-0">
+                <label for="estado" class="mr-2">Filtrar por Estado:</label>
+                <select name="estado" id="estado" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    <option value="Pendiente" {{ old('estado', $selectedEstado ?? '') == 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
+                    <option value="Realizado" {{ old('estado', $selectedEstado ?? '') == 'Realizado' ? 'selected' : '' }}>Realizado</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
