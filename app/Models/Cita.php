@@ -47,4 +47,9 @@ class Cita extends Model
     {
         return $this->hasOne(Triaje::class, 'idcita', 'idcita');
     }
+
+    public function prediccion()
+    {
+        return $this->hasOne(Prediccion::class, 'idcita', 'idcita');
+    }
 }

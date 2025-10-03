@@ -36,6 +36,11 @@ class Paciente extends Model
         return $this->belongsTo(User::class, 'iduser', 'id');
     }
 
+    public function citas()
+    {
+        return $this->hasMany(Cita::class, 'idpaciente', 'idpaciente');
+    }
+
     public function getImagenUrlAttribute()
     {
         if ($this->imagen && Storage::disk('public')->exists($this->imagen)) {

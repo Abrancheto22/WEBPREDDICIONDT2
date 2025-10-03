@@ -154,7 +154,7 @@
                 </li>
                 @endif
 
-                @if(Auth::user()->rol->idrol === 4 || Auth::user()->rol->idrol === 1)
+                @if(in_array(Auth::user()->rol->idrol, [1, 4]))
                 <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <i class="menu-icon tf-icons bx bx-user-circle"></i>
@@ -162,9 +162,15 @@
                     </a>
                     <ul class="menu-sub">
                         <li class="menu-item">
-                            <a href="#" class="menu-link">
-                                <div class="text-truncate">Historial</div>
-                            </a>
+                            @if(Auth::user()->rol->idrol === 4 && Auth::user()->paciente)
+                                <a href="{{ route('pacientes.show', ['idpaciente' => Auth::user()->paciente->idpaciente]) }}" class="menu-link">
+                                    <div class="text-truncate">Mi Historial</div>
+                                </a>
+                            @elseif(Auth::user()->rol->idrol === 1)
+                                <a href="{{ route('pacientes.index') }}" class="menu-link">
+                                    <div class="text-truncate">Ver Pacientes</div>
+                                </a>
+                            @endif
                         </li>
                     </ul>
                 </li>

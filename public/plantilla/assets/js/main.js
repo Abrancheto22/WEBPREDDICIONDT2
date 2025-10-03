@@ -4,7 +4,8 @@
 
 'use strict';
 
-let customMenu,
+let menu,
+  customMenu,
   animate;
 document.addEventListener('DOMContentLoaded', function () {
   // class for ios specific styles

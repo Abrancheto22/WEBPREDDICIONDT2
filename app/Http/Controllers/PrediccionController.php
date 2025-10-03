@@ -165,6 +165,7 @@ class PrediccionController extends Controller
             ]);
 
             if (!$response->successful()) {
+                Log::error('Error al conectar con Gemini API: ' . $response->body());
                 throw new \Exception('Error al conectar con Gemini API: ' . $response->body());
             }
 
@@ -224,7 +225,7 @@ class PrediccionController extends Controller
             Log::error('Error en análisis con Gemini: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => 'Error al realizar el análisis con IA: ' . $e->getMessage()
+                'error' => 'Error en el análisis con IA: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -578,5 +579,120 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
         $prediccion = Prediccion::with(['cita.paciente'])->findOrFail($id);
         $pdf = Pdf::loadView('predicciones.pdf', compact('prediccion'));
         return $pdf->stream('reporte-prediccion-'.$id.'.pdf');
+    }
+
+    private function calculateRiskLevel($probabilidad)
+    {
+        if ($probabilidad >= 0.8) {
+            return [
+                'nivel' => 'MUY ALTO',
+                'descripcion' => 'Riesgo muy elevado de diabetes tipo 2. Se recomienda evaluación médica inmediata y seguimiento especializado.'
+            ];
+        } elseif ($probabilidad >= 0.6) {
+            return [
+                'nivel' => 'ALTO',
+                'descripcion' => 'Riesgo alto de diabetes tipo 2. Se sugiere consulta médica pronta y monitoreo regular de glucosa.'
+            ];
+        } elseif ($probabilidad >= 0.4) {
+            return [
+                'nivel' => 'MODERADO',
+                'descripcion' => 'Riesgo moderado de diabetes tipo 2. Se recomienda adoptar hábitos saludables y controles periódicos.'
+            ];
+        } elseif ($probabilidad >= 0.2) {
+            return [
+                'nivel' => 'BAJO',
+                'descripcion' => 'Riesgo bajo de diabetes tipo 2. Mantener estilo de vida saludable como medida preventiva.'
+            ];
+        } else {
+            return [
+                'nivel' => 'MUY BAJO',
+                'descripcion' => 'Riesgo muy bajo de diabetes tipo 2. Continuar con hábitos saludables para mantener este estado.'
+            ];
+        }
+    }
+
+    private function formatAnalysisText($text)
+    {
+        // Limpiar espacios en blanco excesivos al inicio y final
+        $text = trim($text);
+        
+        // Reemplazar múltiples saltos de línea consecutivos con máximo 1
+        $text = preg_replace('/\n{2,}/', "\n", $text);
+        
+        // Reemplazar **texto** con <strong>texto</strong>
+        $text = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $text);
+
+        // Agregar iconos específicos a títulos y secciones importantes
+        $text = preg_replace('/<h3>(.*?ESTRATIFICACIÓN.*?)<\/h3>/i', '<h3>🎯 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?INTERPRETACIÓN.*?)<\/h3>/i', '<h3>📊 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?RECOMENDACIONES.*?)<\/h3>/i', '<h3>💡 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?PLAN.*?TERAPÉUTICO.*?)<\/h3>/i', '<h3>🏥 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?FACTORES.*?RIESGO.*?)<\/h3>/i', '<h3>⚠️ $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?CONSIDERACIONES.*?)<\/h3>/i', '<h3>📋 $1</h3>', $text);
+        
+        // Agregar iconos a subtítulos h4
+        $text = preg_replace('/<h4>(.*?Clasificación.*?)<\/h4>/i', '<h4>🔍 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Justificación.*?)<\/h4>/i', '<h4>📝 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Correlación.*?)<\/h4>/i', '<h4>🔗 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Análisis.*?)<\/h4>/i', '<h4>🧪 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Estudios.*?)<\/h4>/i', '<h4>🔬 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Periodicidad.*?)<\/h4>/i', '<h4>📅 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Criterios.*?)<\/h4>/i', '<h4>📏 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Intervenciones.*?)<\/h4>/i', '<h4>🎯 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Consideraciones.*?)<\/h4>/i', '<h4>💊 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Objetivos.*?)<\/h4>/i', '<h4>🎯 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Identificación.*?)<\/h4>/i', '<h4>🔍 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Estrategias.*?)<\/h4>/i', '<h4>📈 $1</h4>', $text);
+        
+        // Agregar iconos a términos médicos específicos
+        $text = str_replace(['HbA1c', 'Hemoglobina glicosilada'], ['🩸 HbA1c', '🩸 Hemoglobina glicosilada'], $text);
+        $text = str_replace(['PTOG', 'Prueba de tolerancia'], ['🥤 PTOG', '🥤 Prueba de tolerancia'], $text);
+        $text = str_replace(['glucosa', 'Glucosa'], ['🍯 glucosa', '🍯 Glucosa'], $text);
+        $text = str_replace(['insulina', 'Insulina'], ['💉 insulina', '💉 Insulina'], $text);
+        $text = str_replace(['presión arterial', 'Presión arterial'], ['❤️ presión arterial', '❤️ Presión arterial'], $text);
+        $text = str_replace(['BMI', 'IMC'], ['⚖️ BMI', '⚖️ IMC'], $text);
+        
+        // Agregar iconos a niveles de riesgo
+        $text = str_replace(['ALTO riesgo', 'Alto riesgo'], ['🔴 ALTO riesgo', '🔴 Alto riesgo'], $text);
+        $text = str_replace(['MODERADO riesgo', 'Moderado riesgo'], ['🟡 MODERADO riesgo', '🟡 Moderado riesgo'], $text);
+        $text = str_replace(['BAJO riesgo', 'Bajo riesgo'], ['🟢 BAJO riesgo', '🟢 Bajo riesgo'], $text);
+        
+        // Agregar iconos a recomendaciones comunes
+        $text = str_replace(['dieta', 'Dieta'], ['🥗 dieta', '🥗 Dieta'], $text);
+        $text = str_replace(['ejercicio', 'Ejercicio'], ['🏃‍♂️ ejercicio', '🏃‍♂️ Ejercicio'], $text);
+        $text = str_replace(['peso', 'Peso'], ['⚖️ peso', '⚖️ Peso'], $text);
+        $text = str_replace(['seguimiento', 'Seguimiento'], ['📋 seguimiento', '📋 Seguimiento'], $text);
+        $text = str_replace(['control', 'Control'], ['🎛️ control', '🎛️ Control'], $text);
+
+        // Convertir listas con viñetas (*) en listas HTML
+        $text = preg_replace('/^\* (.*?)(\n|$)/m', '<li>$1</li>', $text);
+        if (strpos($text, '<li>') !== false) {
+            $text = '<ul>' . $text . '</ul>';
+            // Corregir el caso de <ul> anidado si se da por múltiples llamadas
+            $text = str_replace('</ul><ul>', '', $text);
+        }
+
+        // Reemplazar saltos de línea con <br>
+        $text = nl2br($text);
+        
+        // Eliminar completamente múltiples <br> consecutivos después de títulos
+        $text = preg_replace('/(<strong>.*?<\/strong>)(\s*<br\s*\/?>)+/', '$1<br>', $text);
+        
+        // Reducir múltiples <br> consecutivos en general a máximo 1
+        $text = preg_replace('/(<br\s*\/?>){2,}/', '<br>', $text);
+
+        // Limpiar <br> dentro de las etiquetas <li> y <ul>
+        $text = str_replace(['<li><br>', '<br></li>', '<ul><br>', '<br></ul>'], ['<li>', '</li>', '<ul>', '</ul>'], $text);
+        
+        // Limpiar espacios en blanco excesivos entre etiquetas HTML
+        $text = preg_replace('/>\s+</', '><', $text);
+
+        return $text;
+    }
+
+    public function export(Request $request)
+    {
+        $query = Prediccion::with(['cita.paciente.usuario', 'cita.doctor.usuario']);
+        return Excel::store($query, 'predicciones.xlsx', \Maatwebsite\Excel\Excel::XLSX);
     }
 }

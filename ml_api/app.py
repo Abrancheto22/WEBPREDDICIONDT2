@@ -24,7 +24,6 @@ def load_model_and_scaler():
     except FileNotFoundError:
         print(f"Error: Uno o ambos archivos, '{MODEL_PATH}' o '{SCALER_PATH}', no se encontraron.")
         print("Asegúrate de haber ejecutado 'train_model.py' primero.")
-        exit() # Sale si no puede cargar los recursos esenciales
     except Exception as e:
         print(f"Error al cargar el modelo o el escalador: {e}")
         exit()

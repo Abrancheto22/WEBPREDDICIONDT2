@@ -6,6 +6,7 @@ use App\Models\Paciente;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class PacienteController extends Controller
 {
@@ -82,8 +83,18 @@ class PacienteController extends Controller
 
     public function show($idpaciente)
     {
-        $paciente = Paciente::with('usuario')->findOrFail($idpaciente);
-        return view('pacientes.show', compact('paciente'));
+        $paciente = Paciente::with(['usuario', 'citas.triaje', 'citas.prediccion', 'citas.doctor.usuario'])->findOrFail($idpaciente);
+
+        // Asegurarse de que el paciente autenticado solo pueda ver su propio historial, a menos que sea admin
+        if (Auth::user()->rol->idrol === 4 && Auth::user()->paciente->idpaciente != $idpaciente) {
+            abort(403, 'Acceso no autorizado.');
+        }
+
+        $predicciones = $paciente->citas->map(function ($cita) {
+            return $cita->prediccion;
+        })->filter();
+
+        return view('pacientes.show', compact('paciente', 'predicciones'));
     }
 
     public function edit($idpaciente)
