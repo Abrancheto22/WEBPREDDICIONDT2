@@ -106,7 +106,7 @@ return [
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
-            'encrypt' => env('DB_ENCRYPT', 'optional'), // ← 🔁 aquí también
+            'encrypt' => env('DB_ENCRYPT', 'no'),
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', true),
         ],
 

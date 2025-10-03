@@ -22,6 +22,7 @@ class Prediccion extends Model
         'insulina',
         'resultado',
         'observacion',
+        'analisis_ia',
         'timer',
         'timer_inicio', // Agregado
         'timer_parada', // Agregado

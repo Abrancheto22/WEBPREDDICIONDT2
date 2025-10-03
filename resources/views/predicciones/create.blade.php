@@ -213,15 +213,35 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('predicciones.index') }}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" id="predictBtn" class="btn btn-primary">
-                                <span id="predictBtnText">Predecir</span>
-                                <span id="predictSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                                <span id="predictLoadingText" class="d-none">Cargando...</span>
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" id="analyzeAiBtn" class="btn btn-info">
+                                    <i class="fas fa-brain"></i>
+                                    <span id="analyzeAiBtnText">Analizar con IA</span>
+                                    <span id="analyzeAiSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <span id="analyzeAiLoadingText" class="d-none">Analizando...</span>
+                                </button>
+                                <button type="submit" id="predictBtn" class="btn btn-primary">
+                                    <span id="predictBtnText">Predecir</span>
+                                    <span id="predictSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <span id="predictLoadingText" class="d-none">Cargando...</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </form>
+
+            <hr class="my-4">
+
+            {{-- SECCIÓN PARA MOSTRAR EL RESULTADO DEL ANÁLISIS DE IA (inicialmente oculta) --}}
+            <div id="aiAnalysisSection" style="display: none;">
+                <h4 class="mb-3">Análisis con Inteligencia Artificial:</h4>
+                <div id="aiAnalysisContent" class="card">
+                    <div class="card-body">
+                        {{-- Aquí se inyectará el resultado del análisis de IA via JS --}}
+                    </div>
+                </div>
+            </div>
 
             <hr class="my-4">
 
@@ -265,7 +285,7 @@
 
 <script>
     // Variable global para almacenar todas las citas con sus relaciones (triaje, paciente)
-    const allCitasData = @json($citas);
+    const allCitasData = @json($citas ?? []);
 
     function cargarDatosTriaje(idCita) {
         const infoCitaDiv = document.getElementById('infoCita');
@@ -383,6 +403,121 @@
         // Iniciar el temporizador con actualización cada 10ms
         timerInterval = setInterval(updateTimer, 10);
         updateTimer(); // Llamar inmediatamente para evitar retraso inicial
+
+        // --- Lógica para el análisis con IA ---
+        const analyzeAiBtn = document.getElementById('analyzeAiBtn');
+        const analyzeAiBtnText = document.getElementById('analyzeAiBtnText');
+        const analyzeAiSpinner = document.getElementById('analyzeAiSpinner');
+        const analyzeAiLoadingText = document.getElementById('analyzeAiLoadingText');
+        const aiAnalysisSection = document.getElementById('aiAnalysisSection');
+        const aiAnalysisContent = document.getElementById('aiAnalysisContent');
+
+        analyzeAiBtn.addEventListener('click', async function() {
+            // Validar que se haya seleccionado una cita
+            const idcita = document.getElementById('idcita').value;
+            if (!idcita) {
+                alert('Por favor, selecciona una cita antes de realizar el análisis con IA.');
+                return;
+            }
+
+            // Mostrar spinner y deshabilitar botón
+            analyzeAiBtn.disabled = true;
+            analyzeAiBtnText.classList.add('d-none');
+            analyzeAiSpinner.classList.remove('d-none');
+            analyzeAiLoadingText.classList.remove('d-none');
+            
+            aiAnalysisSection.style.display = 'none'; // Ocultar análisis anterior
+
+            // Recopilar datos del formulario
+            const formData = new FormData(predictionForm);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            try {
+                const response = await fetch('{{ route("predicciones.analyze_gemini") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                // Manejar errores de validación
+                if (response.status === 422) {
+                    let errorsHtml = '<div class="alert alert-danger mb-0"><ul>';
+                    for (let key in result.errors) {
+                        result.errors[key].forEach(error => {
+                            errorsHtml += `<li>${error}</li>`;
+                        });
+                    }
+                    errorsHtml += '</ul></div>';
+                    document.querySelector('.card-body').insertAdjacentHTML('afterbegin', errorsHtml);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error en el análisis con IA.');
+                }
+                
+                // Mostrar el resultado del análisis de IA
+                const analysis = result.analysis;
+                const patientData = result.patient_data;
+                
+                // Formatear el análisis para mejor presentación
+                const formattedAnalysis = analysis.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                  .replace(/\n/g, '<br>')
+                                                  .replace(/(\d+\.\s)/g, '<br><strong>$1</strong>');
+
+                let genderNote = '';
+                if (patientData.sexo === 'Masculino' && patientData.embarazos_originales > 0) {
+                    genderNote = `<div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Nota:</strong> Se detectó que el paciente es masculino, por lo que el número de embarazos se ajustó automáticamente de ${patientData.embarazos_originales} a ${patientData.embarazos_ajustados} para el análisis.
+                    </div>`;
+                }
+
+                aiAnalysisContent.innerHTML = `
+                    <div class="mb-3">
+                        <h5 class="text-primary">
+                            <i class="fas fa-user-md"></i> 
+                            Análisis Médico para: ${patientData.nombre}
+                        </h5>
+                        <small class="text-muted">Sexo: ${patientData.sexo}</small>
+                    </div>
+                    ${genderNote}
+                    <div class="analysis-content">
+                        ${formattedAnalysis}
+                    </div>
+                    <div class="mt-3 text-muted">
+                        <small><i class="fas fa-robot"></i> Análisis generado por Inteligencia Artificial Gemini</small>
+                    </div>
+                `;
+                
+                aiAnalysisSection.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                aiAnalysisContent.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Ocurrió un error al realizar el análisis con IA: ${error.message}. Por favor, revise los datos o inténtelo más tarde.
+                    </div>
+                `;
+                aiAnalysisSection.style.display = 'block';
+            } finally {
+                // Ocultar spinner y habilitar botón
+                analyzeAiBtn.disabled = false;
+                analyzeAiBtnText.classList.remove('d-none');
+                analyzeAiSpinner.classList.add('d-none');
+                analyzeAiLoadingText.classList.add('d-none');
+            }
+        });
 
         predictionForm.addEventListener('submit', async function(event) {
             event.preventDefault(); // Prevenir el envío normal del formulario

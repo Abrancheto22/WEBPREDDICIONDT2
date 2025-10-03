@@ -106,6 +106,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/predicciones/{idprediccion}', [PrediccionController::class, 'updateConfirmedPrediction'])->name('predicciones.update_confirmed_prediction');
     Route::delete('/predicciones/{idprediccion}', [PrediccionController::class, 'destroy'])->name('predicciones.destroy');
     Route::post('/predicciones/guardar-confirmada', [PrediccionController::class, 'saveConfirmedPrediction'])->name('predicciones.save_confirmed_prediction');
-
+    Route::post('/predicciones/analizar-gemini', [PrediccionController::class, 'analyzeWithGemini'])->name('predicciones.analyze_gemini');
+    Route::get('predicciones/pdf/{id}', [PrediccionController::class, 'pdf'])->name('predicciones.pdf');
    
 });
