@@ -79,8 +79,8 @@
         .bg-warning { background-color: #ffc107; }
         .bg-secondary { background-color: #6c757d; }
         .ai-analysis {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 15px;
+            padding: 10px;
             background-color: #eef7ff;
             border-left: 4px solid #007bff;
             border-radius: 5px;
@@ -99,29 +99,24 @@
         .ai-analysis-content table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
             background: #ffffff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border: 1px solid #dee2e6;
         }
 
         .ai-analysis-content table th {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: #000;
+            background-color: #f8f9fa;
+            color: #495057;
             font-weight: 600;
-            padding: 15px 12px;
+            padding: 8px 5px;
             text-align: left;
-            border: none;
+            border: 1px solid #dee2e6;
             font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .ai-analysis-content table td {
-            padding: 12px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 5px;
+            border: 1px solid #dee2e6;
             font-size: 13px;
             color: #495057;
             vertical-align: top;

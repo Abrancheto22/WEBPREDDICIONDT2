@@ -10,20 +10,11 @@
     font-size: 14px;
     color: #333;
     font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    margin: 20px 0;
 }
 
 /* Contenido interno */
 .ai-analysis-content > * {
-    background: #ffffff;
-    padding: 15px;
-    border-radius: 3px;
     margin-bottom: 15px;
-    border: 1px solid #e9ecef;
 }
 
 .ai-analysis-content strong {
@@ -39,61 +30,50 @@
 .ai-analysis-content h5, 
 .ai-analysis-content h6 {
     color: #212529;
-    margin: 15px 0 10px 0;
+    margin: 10px 0;
     font-weight: 600;
 }
 
 .ai-analysis-content h3 {
     font-size: 18px;
-    border-bottom: 2px solid #dee2e6;
-    padding-bottom: 8px;
-    margin-bottom: 15px;
 }
 
 .ai-analysis-content h4 {
     font-size: 16px;
     color: #495057;
-    margin: 15px 0 10px 0;
 }
 
 .ai-analysis-content h5 {
     font-size: 14px;
     color: #6c757d;
-    margin: 12px 0 8px 0;
 }
 
 /* Listas simples */
 .ai-analysis-content ul, 
 .ai-analysis-content ol {
-    margin: 15px 0;
-    padding: 15px 20px 15px 40px;
-    background: #ffffff;
-    border-left: 3px solid #dee2e6;
+    margin: 5px 0;
+    padding: 0 20px;
 }
 
 .ai-analysis-content li {
-    margin: 8px 0;
+    margin: 5px 0;
     line-height: 1.5;
     color: #495057;
 }
 
 /* Párrafos simples */
 .ai-analysis-content p {
-    margin: 15px 0;
+    margin: 5px 0;
     text-align: justify;
     color: #495057;
     line-height: 1.6;
-    padding: 10px 15px;
-    background: #ffffff;
-    border-radius: 3px;
-    border-left: 3px solid #e9ecef;
 }
 
 /* Tablas simples */
 .ai-analysis-content table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
+    margin: 10px 0;
     background: #ffffff;
     border: 1px solid #dee2e6;
 }
@@ -102,14 +82,14 @@
     background: #f8f9fa;
     color: #495057;
     font-weight: 600;
-    padding: 12px 10px;
+    padding: 8px 5px;
     text-align: center;
     border: 1px solid #dee2e6;
     font-size: 13px;
 }
 
 .ai-analysis-content table td {
-    padding: 10px;
+    padding: 5px;
     border: 1px solid #dee2e6;
     font-size: 13px;
     color: #495057;
@@ -125,27 +105,24 @@
 .ai-analysis-content .info-block {
     background: #e7f3ff;
     color: #0c5460;
-    border-left: 4px solid #bee5eb;
-    padding: 15px;
-    margin: 15px 0;
+    padding: 10px;
+    margin: 10px 0;
     border-radius: 3px;
 }
 
 .ai-analysis-content .warning-block {
     background: #fff3cd;
     color: #856404;
-    border-left: 4px solid #ffeaa7;
-    padding: 15px;
-    margin: 15px 0;
+    padding: 10px;
+    margin: 10px 0;
     border-radius: 3px;
 }
 
 .ai-analysis-content .success-block {
     background: #d1edff;
     color: #155724;
-    border-left: 4px solid #c3e6cb;
-    padding: 15px;
-    margin: 15px 0;
+    padding: 10px;
+    margin: 10px 0;
     border-radius: 3px;
 }
 
@@ -153,167 +130,12 @@
 .ai-analysis-content .warning-block h4,
 .ai-analysis-content .success-block h4 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     font-size: 16px;
     font-weight: 600;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .ai-analysis-content {
-        padding: 15px;
-        font-size: 13px;
-    }
-    
-    .ai-analysis-content h3 {
-        font-size: 16px;
-    }
-    
-    .ai-analysis-content h4 {
-        font-size: 14px;
-    }
-    
-    .ai-analysis-content table th,
-    .ai-analysis-content table td {
-        padding: 8px 5px;
-        font-size: 12px;
-    }
-}
 
-.ai-analysis-content h2 {
-    margin: 20px 0 15px 0;
-    font-weight: 600;
-    color: #333;
-}
-
-.ai-analysis-content h3 {
-    font-size: 20px;
-    padding: 15px 20px;
-    margin-bottom: 5px;
-    border-bottom: 2px solid #ddd;
-    color: #333;
-    font-weight: 600;
-}
-
-.ai-analysis-content h4 {
-    font-size: 18px;
-    color: #555;
-    padding: 10px 0;
-    margin: 15px 0 1px 0;
-    border-left: 3px solid #ccc;
-    padding-left: 15px;
-}
-
-.ai-analysis-content h5 {
-    font-size: 16px;
-    color: #666;
-    margin: 15px 0 10px 0;
-    font-weight: 600;
-}
-
-/* Estilos simples para listas */
-.ai-analysis-content ul, 
-.ai-analysis-content ol {
-    margin: 15px 0;
-    padding: 15px 20px;
-    background: #f9f9f9;
-    border: 1px solid #e0e0e0;
-}
-
-.ai-analysis-content li {
-    margin: 8px 0;
-    line-height: 1.6;
-    color: #333;
-}
-
-/* Estilos para párrafos */
-.ai-analysis-content p {
-    margin: 15px 0;
-    text-align: justify;
-    color: #333;
-    line-height: 1.6;
-    padding: 10px 0;
-}
-
-/* Estilos simples para tablas */
-.ai-analysis-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 2px 0 20px 0;
-    border: 1px solid #ddd;
-}
-
-.ai-analysis-content table th {
-    background: #f5f5f5;
-    color: #333;
-    font-weight: 600;
-    padding: 12px 10px;
-    text-align: center;
-    border: 1px solid #ddd;
-    font-size: 14px;
-}
-
-.ai-analysis-content table td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    color: #333;
-    text-align: center;
-    background: #fff;
-}
-
-.ai-analysis-content table tr:nth-child(even) td {
-    background: #f9f9f9;
-}
-
-/* Bloques de información simples */
-.ai-analysis-content .info-block {
-    background: #f0f8ff;
-    border-left: 4px solid #007bff;
-    padding: 15px;
-    margin: 15px 0;
-}
-
-.ai-analysis-content .warning-block {
-    background: #fff3cd;
-    border-left: 4px solid #ffc107;
-    padding: 15px;
-    margin: 15px 0;
-}
-
-.ai-analysis-content .success-block {
-    background: #d4edda;
-    border-left: 4px solid #28a745;
-    padding: 15px;
-    margin: 15px 0;
-}
-
-.ai-analysis-content .info-block h4,
-.ai-analysis-content .warning-block h4,
-.ai-analysis-content .success-block h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-}
-
-/* Espaciado general */
-.ai-analysis-content {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-}
-
-.ai-analysis-content p + p {
-    margin-top: 15px;
-}
-
-/* Texto en negrita simple */
-.ai-analysis-content strong,
-.ai-analysis-content b {
-    font-weight: 700;
-    color: #333;
-}
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -344,6 +166,12 @@
                     @if(session('success'))
                         <div class="alert alert-success">
                             {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="alert alert-danger">
+                            {{ session('error') }}
                         </div>
                     @endif
 
@@ -468,6 +296,73 @@
                     </div>
                     @endif
                     
+                    @if($prediccion->attachment_paths && count($prediccion->attachment_paths) > 0)
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="bx bx-paperclip text-info me-2"></i>Documentos Adjuntos
+                        </h5>
+                        <div class="card border-info">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 text-info">
+                                    <i class="bx bx-file me-1"></i>
+                                    Archivos Adjuntos a la Predicción
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    @foreach($prediccion->attachment_paths as $index => $path)
+                                        @php
+                                            $fileName = $prediccion->attachment_names[$index] ?? basename($path);
+                                            $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                                            $iconClass = match($fileExtension) {
+                                                'pdf' => 'bx-file-pdf text-danger',
+                                                'docx', 'doc' => 'bx-file-doc text-primary',
+                                                'jpg', 'jpeg', 'png', 'gif' => 'bx-image text-success',
+                                                default => 'bx-file text-secondary'
+                                            };
+                                        @endphp
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="card h-100 border-light">
+                                                <div class="card-body text-center">
+                                                    <i class="bx {{ $iconClass }} display-4 mb-2"></i>
+                                                    <h6 class="card-title text-truncate" title="{{ $fileName }}">
+                                                        {{ $fileName }}
+                                                    </h6>
+                                                    <p class="card-text">
+                                                        <small class="text-muted">{{ strtoupper($fileExtension) }}</small>
+                                                    </p>
+                                                    <a href="{{ route('predicciones.downloadAttachment', ['id' => $prediccion->idprediccion, 'index' => $index]) }}" 
+                                                       class="btn btn-outline-primary btn-sm">
+                                                        <i class="bx bx-download me-1"></i>Descargar
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">
+                                    <i class="bx bx-info-circle me-1"></i>
+                                    Total de archivos adjuntos: {{ count($prediccion->attachment_paths) }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3">Enviar Reporte por Correo Electrónico</h5>
+                        <form action="{{ route('predicciones.sendEmail', $prediccion->idprediccion) }}" method="POST">
+                            @csrf
+                            <div class="input-group mb-3">
+                                <input type="email" name="email" class="form-control" placeholder="Correo electrónico del destinatario" required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bx bx-envelope me-1"></i> Enviar por Correo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
 
                     <div class="mt-4">
                         <a href="{{ route('predicciones.index') }}" class="btn btn-secondary">

@@ -16,7 +16,7 @@ class PacienteController extends Controller
             ->get()
             ->map(function ($paciente) {
                 if ($paciente->imagen && Storage::disk('public')->exists($paciente->imagen)) {
-                    $paciente->imagen_url = Storage::disk('public')->url($paciente->imagen);
+                    $paciente->imagen_url = asset('storage/' . $paciente->imagen);
                 } else {
                     $paciente->imagen_url = null;
                 }

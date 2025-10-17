@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session; // Importar la clase Session
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use function GuzzleHttp\Psr7\mimetype_from_extension;
 use App\Exports\PrediccionesExport;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 use Carbon\Carbon; // Importar la clase Carbon
+use Illuminate\Support\Facades\Mail;
 
 class PrediccionController extends Controller
 {
@@ -60,7 +62,23 @@ class PrediccionController extends Controller
                 'pedigree' => 'required|numeric|min:0|max:2',
                 'edad' => 'required|numeric|min:18',
                 'observacion' => 'nullable|string',
+                'documentos_adjuntos' => 'nullable|array',
+                'documentos_adjuntos.*' => 'file|mimes:pdf,docx,jpg,png|max:10240', // 10MB por archivo
             ]);
+
+            // Manejo de archivos adjuntos
+            $attachmentPaths = [];
+            $attachmentNames = [];
+            if ($request->hasFile('documentos_adjuntos')) {
+                foreach ($request->file('documentos_adjuntos') as $file) {
+                    $fileName = time() . '_' . $file->getClientOriginalName();
+                    $filePath = $file->storeAs('attachments', $fileName, 'public'); // Guardar en storage/app/public/attachments
+                    $attachmentPaths[] = $filePath;
+                    $attachmentNames[] = $file->getClientOriginalName();
+                }
+                Session::put('uploaded_attachment_paths', $attachmentPaths);
+                Session::put('uploaded_attachment_names', $attachmentNames);
+            }
 
             // **1. Capturar el tiempo de inicio y guardarlo en la sesión**
             $startTime = now();
@@ -126,7 +144,27 @@ class PrediccionController extends Controller
                 'pedigree' => 'required|numeric|min:0|max:2',
                 'edad' => 'required|numeric|min:18',
                 'observacion' => 'nullable|string',
+                'documentos_adjuntos' => 'nullable|array',
+                'documentos_adjuntos.*' => 'file|mimes:pdf,docx,jpg,png|max:10240', // 10MB por archivo
             ]);
+
+            // Manejo de archivos adjuntos
+            $attachmentPaths = [];
+            $attachmentNames = [];
+            if ($request->hasFile('documentos_adjuntos')) {
+                foreach ($request->file('documentos_adjuntos') as $file) {
+                    $fileName = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                    $filePath = $file->storeAs('attachments', $fileName, 'public');
+                    $attachmentPaths[] = $filePath;
+                    $attachmentNames[] = $file->getClientOriginalName();
+                }
+                
+                // Guardar en sesión para usar en el análisis
+                Session::put('uploaded_attachment_paths', $attachmentPaths);
+                Session::put('uploaded_attachment_names', $attachmentNames);
+                
+                Log::info('Archivos adjuntos procesados para análisis IA: ' . json_encode($attachmentPaths));
+            }
 
             // Obtener información del paciente
             $cita = Cita::with(['paciente', 'triaje'])->find($validated['idcita']);
@@ -142,34 +180,72 @@ class PrediccionController extends Controller
             $prediccionExistente = Prediccion::where('idcita', $validated['idcita'])->first();
             $resultadoPrediccion = $prediccionExistente ? $prediccionExistente->resultado : null;
 
-            // Construir el prompt para Gemini incluyendo el resultado si está disponible
-            $prompt = $this->buildGeminiPrompt($validated, $paciente, $embarazos, $resultadoPrediccion);
+            // Recuperar los archivos adjuntos de la sesión
+            $attachmentPaths = Session::get('uploaded_attachment_paths', []);
+            Log::info('Attachment Paths retrieved from session: ' . json_encode($attachmentPaths));
+
+            // Construir el prompt para Gemini incluyendo el resultado si está disponible y los archivos adjuntos
+            $prompt = $this->buildGeminiPrompt($validated, $paciente, $embarazos, $resultadoPrediccion, $attachmentPaths);
+            Log::info('Gemini Prompt built: ' . $prompt);
+
+            // Preparar el contenido para la API de Gemini
+            $parts = [['text' => $prompt]];
+
+            foreach ($attachmentPaths as $path) {
+                $fullPath = storage_path('app/public/attachments/' . basename($path));
+                Log::info('Processing attachment: ' . $fullPath);
+                if (file_exists($fullPath)) {
+                    $mimeType = mime_content_type($fullPath);
+                    $fileContent = file_get_contents($fullPath);
+                    if ($fileContent === false) {
+                        Log::error('Failed to read file content for: ' . $fullPath);
+                        continue;
+                    }
+                    $base64Content = base64_encode($fileContent);
+                    
+                    Log::info('File exists: ' . $fullPath . ', MIME Type: ' . $mimeType . ', Base64 content length: ' . strlen($base64Content));
+
+                    $parts[] = [
+                        'inline_data' => [
+                            'mime_type' => $mimeType,
+                            'data' => $base64Content
+                        ]
+                    ];
+                } else {
+                    Log::warning('Archivo adjunto no encontrado: ' . $fullPath);
+                }
+            }
+            Log::info('Parts array before sending to Gemini: ' . json_encode($parts));
 
             // Llamar a la API de Gemini
-            $geminiApiKey = 'AIzaSyAjT0tLtuKUN8FzbhmKiAFMN5EFP6FhrNg';
-            $geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+            $geminiApiKey = env('GEMINI_API_KEY');
+            $geminiUrl = env('GEMINI_API_URL');
 
+            Log::info('Calling Gemini API with URL: ' . $geminiUrl);
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'X-goog-api-key' => $geminiApiKey,
             ])->post($geminiUrl, [
                 'contents' => [
                     [
-                        'parts' => [
-                            [
-                                'text' => $prompt
-                            ]
-                        ]
+                        'parts' => $parts
                     ]
                 ]
             ]);
 
             if (!$response->successful()) {
-                Log::error('Error al conectar con Gemini API: ' . $response->body());
+                Log::error('Error al conectar con Gemini API: ' . $response->status() . ' - ' . $response->body());
+                Log::error('Gemini API Request Payload: ' . json_encode(['contents' => [['parts' => $parts]]]));
                 throw new \Exception('Error al conectar con Gemini API: ' . $response->body());
             }
 
             $geminiResult = $response->json();
+            Log::info('Gemini API Raw Response: ' . json_encode($geminiResult));
+            // Check if 'candidates' key exists and is not empty
+            if (!isset($geminiResult['candidates']) || empty($geminiResult['candidates'])) {
+                Log::error('Gemini API did not return any candidates: ' . json_encode($geminiResult));
+                throw new \Exception('Gemini API did not return any candidates. Full response: ' . json_encode($geminiResult));
+            }
             $analysisText = $geminiResult['candidates'][0]['content']['parts'][0]['text'] ?? 'No se pudo obtener análisis';
 
             // Procesar el texto de análisis para mejorar el formato
@@ -181,6 +257,15 @@ class PrediccionController extends Controller
             if ($prediccion) {
                 // Si existe, actualizar el análisis de IA
                 $prediccion->analisis_ia = $analysisText;
+                $prediccion->resultado = 0; // Valor temporal hasta que se haga la predicción ML
+                $prediccion->timer = 0; // Valor temporal
+                $prediccion->timer_inicio = now()->format('Y-m-d H:i:s');
+                $prediccion->timer_parada = now()->format('Y-m-d H:i:s');
+                
+                // Guardar archivos adjuntos desde la sesión
+                $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', []);
+                $prediccion->attachment_names = Session::get('uploaded_attachment_names', []);
+                
                 $prediccion->save();
             } else {
                 // Si no existe, crear una nueva predicción temporal con solo el análisis de IA
@@ -200,6 +285,11 @@ class PrediccionController extends Controller
                 $prediccion->timer = 0; // Valor temporal
                 $prediccion->timer_inicio = now();
                 $prediccion->timer_parada = now();
+                
+                // Guardar archivos adjuntos desde la sesión
+                $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', []);
+                $prediccion->attachment_names = Session::get('uploaded_attachment_names', []);
+                
                 $prediccion->save();
             }
 
@@ -222,7 +312,7 @@ class PrediccionController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error en análisis con Gemini: ' . $e->getMessage());
+            Log::error('Error en análisis con Gemini: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
                 'error' => 'Error en el análisis con IA: ' . $e->getMessage()
@@ -230,7 +320,7 @@ class PrediccionController extends Controller
         }
     }
 
-    private function buildGeminiPrompt($data, $paciente, $embarazosAjustados, $prediccionResultado = null)
+    private function buildGeminiPrompt($data, $paciente, $embarazos, $prediccionResultado = null, $attachmentPaths = [])
     {
         $sexoInfo = $paciente->sexo === 'Masculino' && $data['embarazos'] > 0 
             ? " (Nota: El paciente es masculino, por lo que el número de embarazos se ajustó a 0 para el análisis)" 
@@ -243,105 +333,34 @@ class PrediccionController extends Controller
             $diagnostico = $prediccionResultado >= 0.5 ? 'POSITIVO para Diabetes Tipo 2' : 'NEGATIVO para Diabetes Tipo 2';
             $riesgo = $this->calculateRiskLevel($prediccionResultado);
             
-            $prediccionInfo = "
-
-**RESULTADO DE LA PREDICCIÓN DE IA:**
-• Diagnóstico: {$diagnostico}
-• Probabilidad: {$probabilidad}%
-• Nivel de Riesgo: {$riesgo['nivel']}
-• Descripción del Riesgo: {$riesgo['descripcion']}";
+            $prediccionInfo = "\n\n**RESULTADO DE LA PREDICCIÓN DE IA:**\n- Diagnóstico: {$diagnostico}\n- Probabilidad: {$probabilidad}%\n- Nivel de Riesgo: {$riesgo['nivel']}\n- Descripción del Riesgo: {$riesgo['descripcion']}";
         }
 
         // Mejorar la presentación de las observaciones
         $observacionesInfo = !empty($data['observacion']) 
-            ? "
-**OBSERVACIONES MÉDICAS DEL PROFESIONAL:**
-{$data['observacion']}" 
+            ? "\n**OBSERVACIONES MÉDICAS DEL PROFESIONAL:**\n{$data['observacion']}" 
             : "";
 
-        return "Actúa como un médico especialista en diabetes, proporcionando una evaluación clínica dirigida específicamente para APOYAR LA TOMA DE DECISIONES MÉDICAS del doctor tratante.
+        $prompt = "Eres un asistente médico experto en diabetes tipo 2. Analiza la siguiente información del paciente y los documentos adjuntos (si los hay) para proporcionar un análisis detallado, estratificación de riesgo, interpretación de resultados, recomendaciones y un plan terapéutico. Considera toda la información proporcionada, incluyendo los archivos adjuntos, para tu análisis.\n\n" .
+            "**INFORMACIÓN DEL PACIENTE:**\n" .
+            "- Nombre: {$paciente->nombre} {$paciente->apellido}\n" .
+            "- Sexo: {$paciente->sexo}\n" .
+            "- Edad: {$data['edad']}\n" .
+            "- Número de Embarazos: {$embarazos}{$sexoInfo}\n" .
+            "- Glucosa: {$data['glucosa']} mg/dL\n" .
+            "- Presión Sanguínea: {$data['presion_sanguinea']} mmHg\n" .
+            "- Grosor de la Piel: {$data['grosor_piel']} mm\n" .
+            "- Insulina: {$data['insulina']} muU/ml\n" .
+            "- IMC: {$data['BMI']}\n" .
+            "- Función Pedigree de Diabetes: {$data['pedigree']}\n" .
+            $observacionesInfo .
+            $prediccionInfo;
 
-**CONTEXTO CLÍNICO:**
-Paciente: {$paciente->nombre} {$paciente->apellido} | Sexo: {$paciente->sexo} | Edad: {$data['edad']} años
+        if (!empty($attachmentPaths)) {
+            $prompt .= "\n\n**DOCUMENTOS ADJUNTOS:**\nSe han proporcionado documentos adicionales para el análisis. Por favor, revisa estos documentos cuidadosamente y utiliza la información contenida en ellos para enriquecer tu análisis y tus recomendaciones.\n\n**CONTENIDO DE LOS ARCHIVOS ADJUNTOS (TEMPORAL):**\nPor favor, lista brevemente el contenido principal de cada archivo adjunto para confirmar su lectura.";
+        }
 
-**PARÁMETROS EVALUADOS (Protocolo Pima Indians):**
-• Embarazos: {$embarazosAjustados}{$sexoInfo}
-• Glucosa plasmática: {$data['glucosa']} mg/dL
-• Presión arterial diastólica: {$data['presion_sanguinea']} mmHg
-• Grosor del pliegue cutáneo tricipital: {$data['grosor_piel']} mm
-• Insulina sérica: {$data['insulina']} μU/mL
-• Índice de Masa Corporal: {$data['BMI']} kg/m²
-• Función Pedigrí Diabético: {$data['pedigree']}{$prediccionInfo}{$observacionesInfo}
-
-**SOLICITUD DE ANÁLISIS MÉDICO:**
-
-Como especialista, proporciona una evaluación estructurada que incluya:
-
-**1. ESTRATIFICACIÓN DE RIESGO DIABÉTICO:**
-- Clasificación: ALTO / MODERADO / BAJO riesgo
-- Justificación basada en evidencia clínica
-" . ($prediccionResultado !== null ? "
-- Correlación con el resultado de la predicción de IA obtenido" : "") . "
-
-**2. INTERPRETACIÓN CLÍNICA POR PARÁMETROS:**
-- Análisis individual de cada biomarcador
-- Correlaciones fisiopatológicas relevantes
-- Valores de referencia y desviaciones significativas
-
-**3. RECOMENDACIONES DIAGNÓSTICAS:**
-- Estudios complementarios sugeridos (HbA1c, PTOG, etc.)
-- Periodicidad de seguimiento recomendada
-- Criterios de derivación a especialista si aplica
-
-**4. PLAN TERAPÉUTICO SUGERIDO:**
-- Intervenciones no farmacológicas prioritarias
-- Consideraciones farmacológicas si corresponde
-- Objetivos terapéuticos específicos
-
-**5. FACTORES DE RIESGO MODIFICABLES:**
-- Identificación de elementos intervenibles
-- Estrategias de prevención primaria/secundaria
-" . (!empty($data['observacion']) ? "
-
-**6. CONSIDERACIONES SOBRE LAS OBSERVACIONES MÉDICAS:**
-- Análisis de las observaciones del profesional de salud
-- Integración de estos hallazgos con los parámetros clínicos
-- Recomendaciones específicas basadas en estas observaciones" : "") . "
-
-**FORMATO:** Respuesta estructurada, concisa y basada en evidencia científica actual, dirigida a facilitar la decisión clínica del médico tratante.
-
-**IMPORTANTE PARA EL FORMATO:**
-
-1. Usa títulos HTML apropiados:
-   - Para secciones principales: <h3>TÍTULO PRINCIPAL</h3>
-   - Para subsecciones: <h4>Subtítulo</h4>
-   - Para puntos específicos: <h5>Punto específico</h5>
-2. Para la sección 'INTERPRETACIÓN CLÍNICA POR PARÁMETROS', utiliza el siguiente formato de tabla HTML:
-
-<table>
-<tr>
-<th>Biomarcador</th>
-<th>Valor</th>
-<th>Interpretación Clínica</th>
-<th>Valor de Referencia</th>
-<th>Desviación</th>
-</tr>
-<tr>
-<td>Nombre del parámetro</td>
-<td>Valor medido</td>
-<td>Interpretación médica</td>
-<td>Rango normal</td>
-<td>Significancia</td>
-</tr>
-</table>
-
-3. Usa listas con viñetas (-) para recomendaciones y puntos clave
-4. Para información importante usa: <div class='info-block'>contenido destacado</div>
-5. Para advertencias usa: <div class='warning-block'>contenido de advertencia</div>
-6. Para información positiva usa: <div class='success-block'>contenido positivo</div>
-7. NO uses asteriscos dobles (**) para títulos, usa únicamente las etiquetas HTML especificadas
-
-Esto asegurará una presentación clara, profesional y visualmente atractiva en el reporte médico.";
+        return $prompt;
     }
 
     public function saveConfirmedPrediction(Request $request)
@@ -360,6 +379,8 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
             'probability_diabetes' => 'required|numeric|min:0|max:1',
             'timer' => 'required|string',
             'timer_duration_ms' => 'required|numeric|min:0',
+            'attachment_paths' => 'nullable|array',
+            'attachment_names' => 'nullable|array',
         ]);
 
         try {
@@ -398,7 +419,15 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
             $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
             $prediccion->timer = $totalSeconds;
 
+            // Guardar archivos adjuntos desde la sesión
+            $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', []);
+            $prediccion->attachment_names = Session::get('uploaded_attachment_names', []);
+
             $prediccion->save();
+
+            // Limpiar los datos de archivos adjuntos de la sesión después de guardar
+            Session::forget('uploaded_attachment_paths');
+            Session::forget('uploaded_attachment_names');
 
             $cita = Cita::find($validated['idcita']);
             if ($cita) {
@@ -442,7 +471,61 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
                 'pedigree' => 'required|numeric|min:0|max:2',
                 'edad' => 'required|numeric|min:18',
                 'observacion' => 'nullable|string',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif|max:5120',
+                'removed_attachments' => 'nullable|string',
             ]);
+
+            // Manejar archivos adjuntos eliminados
+            $prediccion = Prediccion::findOrFail($idprediccion);
+            $currentPaths = $prediccion->attachment_paths ?? [];
+            $currentNames = $prediccion->attachment_names ?? [];
+            
+            if ($request->has('removed_attachments') && !empty($request->removed_attachments)) {
+                $removedIndices = json_decode($request->removed_attachments, true);
+                if (is_array($removedIndices)) {
+                    // Eliminar archivos físicos
+                    foreach ($removedIndices as $index) {
+                        if (isset($currentPaths[$index])) {
+                            $filePath = storage_path('app/' . $currentPaths[$index]);
+                            if (file_exists($filePath)) {
+                                unlink($filePath);
+                            }
+                        }
+                    }
+                    
+                    // Filtrar arrays eliminando los índices marcados
+                    $currentPaths = array_values(array_filter($currentPaths, function($key) use ($removedIndices) {
+                        return !in_array($key, $removedIndices);
+                    }, ARRAY_FILTER_USE_KEY));
+                    
+                    $currentNames = array_values(array_filter($currentNames, function($key) use ($removedIndices) {
+                        return !in_array($key, $removedIndices);
+                    }, ARRAY_FILTER_USE_KEY));
+                }
+            }
+
+            // Manejar nuevos archivos adjuntos
+            $newAttachmentPaths = [];
+            $newAttachmentNames = [];
+            
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $originalName = $file->getClientOriginalName();
+                    $path = $file->store('attachments', 'local');
+                    
+                    $newAttachmentPaths[] = $path;
+                    $newAttachmentNames[] = $originalName;
+                }
+            }
+
+            // Combinar archivos existentes con nuevos
+            $allAttachmentPaths = array_merge($currentPaths, $newAttachmentPaths);
+            $allAttachmentNames = array_merge($currentNames, $newAttachmentNames);
+
+            // Guardar en sesión para usar en la API de ML
+            Session::put('uploaded_attachment_paths', $allAttachmentPaths);
+            Session::put('uploaded_attachment_names', $allAttachmentNames);
 
             // Capturar el tiempo de inicio para la re-predicción
             $startTime = now();
@@ -541,7 +624,15 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
             $prediccion->timer_inicio = $startTime;
             $prediccion->timer_parada = $stopTime;
 
+            // Recuperar y guardar los archivos adjuntos de la sesión
+            $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', []);
+            $prediccion->attachment_names = Session::get('uploaded_attachment_names', []);
+
             $prediccion->save();
+
+            // Limpiar los datos de archivos adjuntos de la sesión
+            Session::forget('uploaded_attachment_paths');
+            Session::forget('uploaded_attachment_names');
             
             return response()->json([
                 'success' => true,
@@ -577,8 +668,38 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
     public function pdf($id)
     {
         $prediccion = Prediccion::with(['cita.paciente'])->findOrFail($id);
-        $pdf = Pdf::loadView('predicciones.pdf', compact('prediccion'));
+        $pdf = DomPDF::loadView('predicciones.pdf', compact('prediccion'));
         return $pdf->stream('reporte-prediccion-'.$id.'.pdf');
+    }
+
+    public function downloadAttachment($id, $index)
+    {
+        try {
+            $prediccion = Prediccion::findOrFail($id);
+            
+            // Verificar que existan archivos adjuntos
+            if (!$prediccion->attachment_paths || !isset($prediccion->attachment_paths[$index])) {
+                return redirect()->back()->with('error', 'Archivo adjunto no encontrado.');
+            }
+            
+            $attachmentPath = $prediccion->attachment_paths[$index];
+            $attachmentName = $prediccion->attachment_names[$index] ?? basename($attachmentPath);
+            
+            // Construir la ruta completa del archivo
+            $fullPath = storage_path('app/public/attachments/' . basename($attachmentPath));
+            
+            // Verificar que el archivo existe
+            if (!file_exists($fullPath)) {
+                return redirect()->back()->with('error', 'El archivo adjunto no existe en el servidor.');
+            }
+            
+            // Descargar el archivo
+            return response()->download($fullPath, $attachmentName);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al descargar archivo adjunto: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al descargar el archivo adjunto.');
+        }
     }
 
     private function calculateRiskLevel($probabilidad)
@@ -694,5 +815,30 @@ Esto asegurará una presentación clara, profesional y visualmente atractiva en 
     {
         $query = Prediccion::with(['cita.paciente.usuario', 'cita.doctor.usuario']);
         return Excel::store($query, 'predicciones.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+    }
+
+    public function sendEmail(Request $request, $idprediccion)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $prediccion = Prediccion::with(['cita.paciente', 'cita.doctor', 'cita.enfermera'])->findOrFail($idprediccion);
+
+        $pdf = DomPDF::loadView('predicciones.pdf', compact('prediccion'));
+
+        try {
+            Mail::send('emails.reporte', compact('prediccion'), function ($message) use ($request, $pdf) {
+                $message->to($request->email)
+                        ->subject('Reporte de Predicción Médica')
+                        ->attachData($pdf->output(), 'reporte_prediccion.pdf', [
+                            'mime' => 'application/pdf',
+                        ]);
+            });
+
+            return redirect()->back()->with('success', 'Reporte enviado por correo electrónico exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al enviar el reporte: ' . $e->getMessage());
+        }
     }
 }

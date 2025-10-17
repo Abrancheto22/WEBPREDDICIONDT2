@@ -44,7 +44,7 @@ class Paciente extends Model
     public function getImagenUrlAttribute()
     {
         if ($this->imagen && Storage::disk('public')->exists($this->imagen)) {
-            return Storage::disk('public')->url($this->imagen);
+            return asset('storage/' . $this->imagen);
         }
         return null;
     }

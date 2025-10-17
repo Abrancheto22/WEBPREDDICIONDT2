@@ -4,17 +4,22 @@
 
 @push('styles')
 <style>
+    /* Timer styles */
     #timer {
         position: fixed;
         top: 20px;
         right: 20px;
-        background-color: #f8f9fa;
-        padding: 10px 15px;
-        border-radius: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        font-weight: bold;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        font-weight: 600;
         z-index: 1000;
+        font-size: 0.9rem;
+        border: 2px solid rgba(255,255,255,0.2);
     }
+    
     .modal-timer {
         font-size: 1.5rem;
         font-weight: bold;
@@ -22,235 +27,563 @@
         margin: 15px 0;
         color: #0d6efd;
     }
+
+    /* Professional header styles */
+    .professional-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px 15px 0 0;
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .professional-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .professional-header h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .professional-header .header-icon {
+        background: rgba(255,255,255,0.2);
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 1.5rem;
+    }
+
+    .professional-header .subtitle {
+        margin-top: 8px;
+        opacity: 0.9;
+        font-size: 1rem;
+        font-weight: 400;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Card improvements */
+    .main-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .section-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .section-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-icon {
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+
+    .form-label {
+        color: #495057;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-gradient-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-gradient-info {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+    }
+
+    .btn-gradient-info:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        color: white;
+    }
+
+    .btn-outline-secondary {
+        border: 2px solid #6c757d;
+        color: #6c757d;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #6c757d;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .result-section {
+        margin-top: 2rem;
+        animation: fadeInUp 0.5s ease;
+    }
+
+    .result-card {
+        border-left: 4px solid #667eea;
+    }
+
+    .result-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        min-height: 100px;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .alert {
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        color: white;
+    }
+
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
 </style>
 @endpush
 
 @section('content')
 <div id="timer" class="d-none">Tiempo: <span id="time-display">00:00:00</span></div>
 <div class="container mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="mb-0">Realizar Análisis de Diabetes (ML)</h3>
+    <div class="card main-card">
+        <div class="card-header professional-header">
+            <h3 class="mb-0">
+                <span class="header-icon">
+                    <i class="fas fa-brain"></i>
+                </span>
+                Análisis Inteligente de Diabetes
+            </h3>
+            <div class="subtitle">Sistema de predicción con Machine Learning e Inteligencia Artificial</div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
             @if(session('error'))
-                <div class="alert alert-danger">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
                     {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
             @if(session('warning'))
-                <div class="alert alert-warning">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
                     {{ session('warning') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             {{-- Mostrar errores de validación del backend --}}
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>Por favor corrige los siguientes errores:</strong>
+                    <ul class="mb-0 mt-2">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             {{-- FORMULARIO PRINCIPAL PARA LA PREDICCIÓN --}}
-            <form id="predictionForm" action="{{ route('predicciones.store') }}" method="POST">
+            <form id="predictionForm" action="{{ route('predicciones.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="mb-3">
-                            <label for="idcita" class="form-label">Cita</label>
-                            <select name="idcita" id="idcita" class="form-select @error('idcita') is-invalid @enderror" 
-                                    onchange="cargarDatosTriaje(this.value)" required>
-                                @if(isset($cita) && $cita)
-                                    <option value="{{ $cita->idcita }}" selected>
-                                        {{ $cita->paciente->nombre }} {{ $cita->paciente->apellido }} - 
-                                        {{ $cita->fecha_cita }} {{ date('H:i', strtotime($cita->hora_cita)) }}
-                                    </option>
-                                @else
-                                    <option value="">Selecciona una cita</option>
-                                    @foreach($citas as $c)
-                                        @if($c->triaje)
-                                            <option value="{{ $c->idcita }}" 
-                                                    {{ old('idcita') == $c->idcita ? 'selected' : '' }}>
-                                                {{ $c->paciente->nombre }} {{ $c->paciente->apellido }} - 
-                                                {{ $c->fecha_cita }} {{ date('H:i', strtotime($c->hora_cita)) }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            </select>
-                            @error('idcita')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div id="infoCita" class="mt-3 card bg-light p-3" style="display: none;">
-                            <h5 class="card-title">Detalles de la Cita y Paciente</h5>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>Paciente:</strong> <span id="infoPacienteNombre">-</span></p>
-                                    <p><strong>DNI:</strong> <span id="infoPacienteDNI">-</span></p>
-                                    <p><strong>Sexo:</strong> <span id="infoPacienteSexo">-</span></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Teléfono:</strong> <span id="infoPacienteTelefono">-</span></p>
-                                    <p><strong>Fecha Cita:</strong> <span id="infoCitaFecha">-</span></p>
-                                    <p><strong>Hora Cita:</strong> <span id="infoCitaHora">-</span></p>
-                                </div>
+                {{-- SECCIÓN DE SELECCIÓN DE CITA --}}
+                <div class="section-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-calendar-check section-icon"></i>
+                        Selección de Cita Médica
+                    </h5>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="idcita" class="form-label fw-semibold">
+                                    <i class="fas fa-user-md me-2 text-primary"></i>
+                                    Cita Médica
+                                </label>
+                                <select name="idcita" id="idcita" class="form-select @error('idcita') is-invalid @enderror" 
+                                        onchange="cargarDatosTriaje(this.value)" required>
+                                    @if(isset($cita) && $cita)
+                                        <option value="{{ $cita->idcita }}" selected>
+                                            {{ $cita->paciente->nombre }} {{ $cita->paciente->apellido }} - 
+                                            {{ $cita->fecha_cita }} {{ date('H:i', strtotime($cita->hora_cita)) }}
+                                        </option>
+                                    @else
+                                        <option value="">Selecciona una cita</option>
+                                        @foreach($citas as $c)
+                                            @if($c->triaje)
+                                                <option value="{{ $c->idcita }}" 
+                                                        {{ old('idcita') == $c->idcita ? 'selected' : '' }}>
+                                                    {{ $c->paciente->nombre }} {{ $c->paciente->apellido }} - 
+                                                    {{ $c->fecha_cita }} {{ date('H:i', strtotime($c->hora_cita)) }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                </select>
+                                @error('idcita')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
-                            <div id="alertaSinTriaje" class="alert alert-warning mt-3" style="display: none;">
-                                La cita seleccionada no tiene un triaje asociado. Por favor, ingrese los datos manualmente.
+
+                            <div id="infoCita" class="mt-3 card bg-light border-0 shadow-sm" style="display: none;">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Información del Paciente y Cita
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-2"><strong><i class="fas fa-user me-2 text-muted"></i>Paciente:</strong> <span id="infoPacienteNombre">-</span></p>
+                                            <p class="mb-2"><strong><i class="fas fa-id-card me-2 text-muted"></i>DNI:</strong> <span id="infoPacienteDNI">-</span></p>
+                                            <p class="mb-2"><strong><i class="fas fa-venus-mars me-2 text-muted"></i>Sexo:</strong> <span id="infoPacienteSexo">-</span></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-2"><strong><i class="fas fa-phone me-2 text-muted"></i>Teléfono:</strong> <span id="infoPacienteTelefono">-</span></p>
+                                            <p class="mb-2"><strong><i class="fas fa-calendar me-2 text-muted"></i>Fecha Cita:</strong> <span id="infoCitaFecha">-</span></p>
+                                            <p class="mb-2"><strong><i class="fas fa-clock me-2 text-muted"></i>Hora Cita:</strong> <span id="infoCitaHora">-</span></p>
+                                        </div>
+                                    </div>
+                                    <div id="alertaSinTriaje" class="alert alert-warning mt-3" style="display: none;">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        La cita seleccionada no tiene un triaje asociado. Por favor, ingrese los datos manualmente.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-12">
-                        <h5 class="mb-3">Datos para la Predicción (Pima Indians)</h5>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="embarazos" class="form-label">Número de Embarazos</label>
+                {{-- SECCIÓN DE DATOS CLÍNICOS --}}
+                <div class="section-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-heartbeat section-icon"></i>
+                        Datos Clínicos del Paciente
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="embarazos" class="form-label fw-semibold">
+                                    <i class="fas fa-baby me-2 text-info"></i>
+                                    Número de Embarazos
+                                </label>
                                 <input type="number" name="embarazos" id="embarazos" 
                                         class="form-control @error('embarazos') is-invalid @enderror" 
-                                        value="{{ old('embarazos', $cita->triaje->embarazos ?? '') }}" required min="0">
+                                        value="{{ old('embarazos', $cita->triaje->embarazos ?? '') }}" required min="0" max="20">
                                 @error('embarazos')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="glucosa" class="form-label">Glucosa</label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="glucosa" class="form-label fw-semibold">
+                                    <i class="fas fa-tint me-2 text-danger"></i>
+                                    Glucosa (mg/dL)
+                                </label>
                                 <input type="number" step="0.01" name="glucosa" id="glucosa" 
                                         class="form-control @error('glucosa') is-invalid @enderror" 
-                                        value="{{ old('glucosa', $cita->triaje->glucosa ?? '') }}" required min="0">
+                                        value="{{ old('glucosa', $cita->triaje->glucosa ?? '') }}" required min="0" max="300">
                                 @error('glucosa')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="presion_sanguinea" class="form-label">Presión Sanguínea</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="presion_sanguinea" class="form-label fw-semibold">
+                                    <i class="fas fa-heart me-2 text-danger"></i>
+                                    Presión Sanguínea (mmHg)
+                                </label>
                                 <input type="number" step="0.01" name="presion_sanguinea" id="presion_sanguinea" 
                                         class="form-control @error('presion_sanguinea') is-invalid @enderror" 
-                                        value="{{ old('presion_sanguinea', $cita->triaje->presion_sanguinea ?? '') }}" required min="0">
+                                        value="{{ old('presion_sanguinea', $cita->triaje->presion_sanguinea ?? '') }}" required min="0" max="200">
                                 @error('presion_sanguinea')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="grosor_piel" class="form-label">Grosor de Piel (mm)</label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="grosor_piel" class="form-label fw-semibold">
+                                    <i class="fas fa-ruler me-2 text-warning"></i>
+                                    Grosor de Piel (mm)
+                                </label>
                                 <input type="number" step="0.01" name="grosor_piel" id="grosor_piel" 
                                         class="form-control @error('grosor_piel') is-invalid @enderror" 
-                                        value="{{ old('grosor_piel', $cita->triaje->grosor_piel ?? '') }}" required min="0">
+                                        value="{{ old('grosor_piel', $cita->triaje->grosor_piel ?? '') }}" required min="0" max="100">
                                 @error('grosor_piel')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="insulina" class="form-label">Insulina (mu U/ml)</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="insulina" class="form-label fw-semibold">
+                                    <i class="fas fa-syringe me-2 text-success"></i>
+                                    Insulina (μU/mL)
+                                </label>
                                 <input type="number" step="0.01" name="insulina" id="insulina" 
                                         class="form-control @error('insulina') is-invalid @enderror" 
-                                        value="{{ old('insulina', $cita->triaje->insulina ?? '') }}" required min="0">
+                                        value="{{ old('insulina', $cita->triaje->insulina ?? '') }}" required min="0" max="1000">
                                 @error('insulina')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="BMI" class="form-label">BMI (kg/m2)</label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="BMI" class="form-label fw-semibold">
+                                    <i class="fas fa-weight me-2 text-primary"></i>
+                                    Índice de Masa Corporal (BMI)
+                                </label>
                                 <input type="number" step="0.01" name="BMI" id="BMI" 
                                         class="form-control @error('BMI') is-invalid @enderror" 
-                                        value="{{ old('BMI', $cita->triaje->BMI ?? '') }}" required min="0">
+                                        value="{{ old('BMI', $cita->triaje->BMI ?? '') }}" required min="0" max="100">
                                 @error('BMI')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="pedigree" class="form-label">Función Pedigree de Diabetes</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="pedigree" class="form-label fw-semibold">
+                                    <i class="fas fa-dna me-2 text-info"></i>
+                                    Función Pedigree de Diabetes
+                                </label>
                                 <input type="number" step="0.001" name="pedigree" id="pedigree" 
                                         class="form-control @error('pedigree') is-invalid @enderror" 
-                                        value="{{ old('pedigree', $cita->triaje->pedigree ?? '') }}" required min="0">
+                                        value="{{ old('pedigree', $cita->triaje->pedigree ?? '') }}" required min="0" max="5">
                                 @error('pedigree')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="edad" class="form-label">Edad (años)</label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edad" class="form-label fw-semibold">
+                                    <i class="fas fa-birthday-cake me-2 text-secondary"></i>
+                                    Edad (años)
+                                </label>
                                 <input type="number" name="edad" id="edad" 
                                         class="form-control @error('edad') is-invalid @enderror" 
-                                        value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="0">
+                                        value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="0" max="120">
                                 @error('edad')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="mb-3">
-                            <label for="observacion" class="form-label">Observación (Opcional)</label>
-                            <textarea name="observacion" id="observacion" 
-                                        class="form-control @error('observacion') is-invalid @enderror"
-                                        rows="3">{{ old('observacion') }}</textarea>
-                            @error('observacion')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                {{-- SECCIÓN DE DOCUMENTOS Y OBSERVACIONES --}}
+                <div class="section-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-file-medical section-icon"></i>
+                        Documentos y Observaciones
+                    </h5>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="documentos_adjuntos" class="form-label fw-semibold">
+                                    <i class="fas fa-paperclip me-2 text-primary"></i>
+                                    Documentos Adjuntos
+                                </label>
+                                <input type="file" name="documentos_adjuntos[]" id="documentos_adjuntos" 
+                                        class="form-control @error('documentos_adjuntos') is-invalid @enderror" 
+                                        multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Puedes subir múltiples archivos (PDF, DOC, DOCX, JPG, PNG). Máximo 10MB por archivo.
+                                </div>
+                                @error('documentos_adjuntos')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="observacion" class="form-label fw-semibold">
+                                    <i class="fas fa-notes-medical me-2 text-secondary"></i>
+                                    Observaciones Médicas
+                                </label>
+                                <textarea name="observacion" id="observacion" 
+                                          class="form-control @error('observacion') is-invalid @enderror" 
+                                          rows="4" placeholder="Ingrese observaciones adicionales, síntomas relevantes o notas médicas...">{{ old('observacion') }}</textarea>
+                                @error('observacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ route('predicciones.index') }}" class="btn btn-secondary">Cancelar</a>
-                            <div class="d-flex gap-2">
-                                <button type="button" id="analyzeAiBtn" class="btn btn-info">
-                                    <i class="fas fa-brain"></i>
-                                    <span id="analyzeAiBtnText">Analizar con IA</span>
-                                    <span id="analyzeAiSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                                    <span id="analyzeAiLoadingText" class="d-none">Analizando...</span>
-                                </button>
-                                <button type="submit" id="predictBtn" class="btn btn-primary">
-                                    <span id="predictBtnText">Predecir</span>
-                                    <span id="predictSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                                    <span id="predictLoadingText" class="d-none">Cargando...</span>
-                                </button>
+                {{-- SECCIÓN DE ACCIONES --}}
+                <div class="section-card">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ route('predicciones.index') }}" class="btn btn-outline-secondary btn-lg px-4">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Cancelar
+                                </a>
+                                <div class="d-flex gap-3">
+                                    <button type="button" id="analyzeAiBtn" class="btn btn-gradient-info btn-lg px-4">
+                                        <i class="fas fa-brain me-2"></i>
+                                        <span id="analyzeAiBtnText">Analizar con IA</span>
+                                        <span id="analyzeAiSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status" aria-hidden="true"></span>
+                                        <span id="analyzeAiLoadingText" class="d-none">Analizando...</span>
+                                    </button>
+                                    <button type="submit" id="predictBtn" class="btn btn-gradient-primary btn-lg px-4">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        <span id="predictBtnText">Realizar Predicción</span>
+                                        <span id="predictSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status" aria-hidden="true"></span>
+                                        <span id="predictLoadingText" class="d-none">Procesando...</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </form>
 
-            <hr class="my-4">
-
-            {{-- SECCIÓN PARA MOSTRAR EL RESULTADO DEL ANÁLISIS DE IA (inicialmente oculta) --}}
-            <div id="aiAnalysisSection" style="display: none;">
-                <h4 class="mb-3">Análisis con Inteligencia Artificial:</h4>
-                <div id="aiAnalysisContent" class="card">
-                    <div class="card-body">
+            {{-- SECCIÓN PARA MOSTRAR EL RESULTADO DEL ANÁLISIS DE IA --}}
+            <div id="aiAnalysisSection" class="result-section" style="display: none;">
+                <div class="section-card result-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-robot section-icon text-info"></i>
+                        Análisis con Inteligencia Artificial
+                    </h5>
+                    <div id="aiAnalysisContent" class="result-content">
                         {{-- Aquí se inyectará el resultado del análisis de IA via JS --}}
                     </div>
                 </div>
             </div>
 
-            <hr class="my-4">
-
-            {{-- SECCIÓN PARA MOSTRAR EL RESULTADO DE LA PREDICCIÓN (inicialmente oculta) --}}
-            <div id="predictionResultSection" style="display: none;">
-                <h4 class="mb-3">Resultado de la Predicción:</h4>
-                <div id="predictionResultContent">
-                    {{-- Aquí se inyectará el resultado via JS --}}
+            {{-- SECCIÓN PARA MOSTRAR EL RESULTADO DE LA PREDICCIÓN --}}
+            <div id="predictionResultSection" class="result-section" style="display: none;">
+                <div class="section-card result-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-chart-bar section-icon text-success"></i>
+                        Resultado de la Predicción
+                    </h5>
+                    <div id="predictionResultContent" class="result-content">
+                        {{-- Aquí se inyectará el resultado via JS --}}
+                    </div>
                 </div>
+            </div>
 
                 {{-- FORMULARIO PARA GUARDAR LA PREDICCIÓN (inicialmente oculto) --}}
                 <form id="savePredictionForm" action="{{ route('predicciones.save_confirmed_prediction') }}" method="POST" style="display: none;">
@@ -285,7 +618,7 @@
 
 <script>
     // Variable global para almacenar todas las citas con sus relaciones (triaje, paciente)
-    const allCitasData = @json($citas ?? []);
+    const allCitasData = <?php echo json_encode($citas ?? []); ?>;
 
     function cargarDatosTriaje(idCita) {
         const infoCitaDiv = document.getElementById('infoCita');
@@ -428,22 +761,18 @@
             
             aiAnalysisSection.style.display = 'none'; // Ocultar análisis anterior
 
-            // Recopilar datos del formulario
+            // Recopilar datos del formulario incluyendo archivos adjuntos
             const formData = new FormData(predictionForm);
-            const data = {};
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
-            }
 
             try {
                 const response = await fetch('{{ route("predicciones.analyze_gemini") }}', {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json'
+                        // No incluir Content-Type para que el navegador lo configure automáticamente para multipart/form-data
                     },
-                    body: JSON.stringify(data)
+                    body: formData // Enviar FormData directamente para incluir archivos
                 });
 
                 const result = await response.json();

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Prediccion extends Model
 {
+    public $timestamps = false;
+
     protected $table = 'prediccion';
 
     protected $primaryKey = 'idprediccion';
@@ -26,11 +28,21 @@ class Prediccion extends Model
         'timer',
         'timer_inicio', // Agregado
         'timer_parada', // Agregado
+        'attachment_paths', // Agregado para documentos adjuntos
+        'attachment_names', // Agregado para nombres de documentos adjuntos
     ];
     
     protected $hidden = [
         'created_at',
         'updated_at'
+    ];
+    
+    protected $casts = [
+        'analisis_ia' => 'string',
+        'timer_inicio' => 'string',
+        'timer_parada' => 'string',
+        'attachment_paths' => 'array', // Cast para JSON array
+        'attachment_names' => 'array', // Cast para JSON array
     ];
 
     
