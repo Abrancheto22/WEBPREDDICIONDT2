@@ -10,6 +10,7 @@ use App\Models\Rol;
 use App\Models\Doctor;
 use App\Models\Enfermera;
 use App\Models\Paciente;
+use Carbon\Carbon;
 
 class IndexController extends Controller
 {
@@ -18,7 +19,7 @@ class IndexController extends Controller
         return view('welcome');
     }
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         // Obtener todos los registros de predicción con sus timers
         $predicciones = \App\Models\Prediccion::all(['timer']);
@@ -48,12 +49,90 @@ class IndexController extends Controller
         
         $totalPredicciones = count($predicciones);
         $tiempoPromedio = $totalPredicciones > 0 ? $suma / $totalPredicciones : 0;
+
+        $selectedYear = (int)($request->input('year', date('Y')));
+        $selectedMonth = $request->filled('month') ? (int)$request->input('month') : null; // 1-12
+
+        $query = \App\Models\Prediccion::query()
+            ->whereNotNull('timer_parada')
+            ->where('resultado', '>=', 0.5)
+            ->whereYear('timer_parada', $selectedYear);
+
+        if ($selectedMonth) {
+            $query->whereMonth('timer_parada', $selectedMonth);
+        }
+
+        $trendQuery = $query
+            ->selectRaw('MONTH(timer_parada) as m, COUNT(*) as c')
+            ->groupByRaw('MONTH(timer_parada)')
+            ->orderByRaw('MONTH(timer_parada)')
+            ->get();
+
+        $queryNeg = \App\Models\Prediccion::query()
+            ->whereNotNull('timer_parada')
+            ->where('resultado', '<', 0.5)
+            ->whereYear('timer_parada', $selectedYear);
+
+        if ($selectedMonth) {
+            $queryNeg->whereMonth('timer_parada', $selectedMonth);
+        }
+
+        $trendQueryNeg = $queryNeg
+            ->selectRaw('MONTH(timer_parada) as m, COUNT(*) as c')
+            ->groupByRaw('MONTH(timer_parada)')
+            ->orderByRaw('MONTH(timer_parada)')
+            ->get();
+
+        $monthNames = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
+            7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+        ];
+
+        $trendLabels = [];
+        $trendCounts = [];
+        $trendCountsNeg = [];
+
+        if ($selectedMonth) {
+            // Mostrar días del mes seleccionado (1..n)
+            $daysInMonth = Carbon::create($selectedYear, $selectedMonth, 1)->daysInMonth;
+            // Mapear por día (1-31)
+            $countMapByDay = [];
+            foreach ($trendQuery as $row) {
+                $day = (int) Carbon::parse($row->d)->format('j');
+                $countMapByDay[$day] = (int) $row->c;
+            }
+            $countMapByDayNeg = [];
+            foreach ($trendQueryNeg as $row) {
+                $day = (int) Carbon::parse($row->d)->format('j');
+                $countMapByDayNeg[$day] = (int) $row->c;
+            }
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $trendLabels[] = str_pad((string)$day, 2, '0', STR_PAD_LEFT);
+                $trendCounts[] = $countMapByDay[$day] ?? 0;
+                $trendCountsNeg[] = $countMapByDayNeg[$day] ?? 0;
+            }
+        } else {
+            // Mostrar todos los meses del año
+            $countMap = $trendQuery->pluck('c', 'm');
+            $countMapNeg = $trendQueryNeg->pluck('c', 'm');
+            for ($m = 1; $m <= 12; $m++) {
+                $trendLabels[] = $monthNames[$m];
+                $trendCounts[] = (int)($countMap[$m] ?? 0);
+                $trendCountsNeg[] = (int)($countMapNeg[$m] ?? 0);
+            }
+        }
         
         return view('index', [
             'totalTiempoPrediccion' => $suma,
             'totalPredicciones' => $totalPredicciones,
             'tiempoPromedio' => $tiempoPromedio,
-            'valoresTimer' => $valoresTimer // Solo para depuración
+            'valoresTimer' => $valoresTimer,
+            'trendLabels' => $trendLabels,
+            'trendCounts' => $trendCounts,
+            'trendCountsNeg' => $trendCountsNeg,
+            'selectedYear' => $selectedYear,
+            'selectedMonth' => $selectedMonth,
+            'trendGranularity' => $selectedMonth ? 'daily' : 'monthly',
         ]);
     }
 

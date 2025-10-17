@@ -82,30 +82,108 @@
         </div>
       </div>
     </div>
-    
-    <div class="col-xxl-8 mb-6 order-0">
-      <div class="card">
-        <div class="d-flex align-items-start row">
-          <div class="col-sm-7">
-            <div class="card-body">
-              <h5 class="card-title text-primary mb-3">Bienvenido a la Predicción de DT</h5>
-              <p class="mb-6">
-                Sistema para la predicción de resultados en la disciplina de DT.
-              </p>
-              <a href="javascript:;" class="btn btn-sm btn-outline-primary">Ver Predicciones</a>
+    <div class="col-12 mb-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          <form method="GET" action="{{ route('dashboard') }}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label for="year" class="form-label">Año</label>
+              @php $currentYear = now()->year; @endphp
+              <select id="year" name="year" class="form-select">
+                @for($y = $currentYear; $y >= $currentYear - 5; $y--)
+                  <option value="{{ $y }}" {{ (isset($selectedYear) && (int)$selectedYear === $y) ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="month" class="form-label">Mes</label>
+              @php $monthNames = [1=>'Enero',2=>'Febrero',3=>'Marzo',4=>'Abril',5=>'Mayo',6=>'Junio',7=>'Julio',8=>'Agosto',9=>'Septiembre',10=>'Octubre',11=>'Noviembre',12=>'Diciembre']; @endphp
+              <select id="month" name="month" class="form-select">
+                <option value="">Todos</option>
+                @for($m = 1; $m <= 12; $m++)
+                  <option value="{{ $m }}" {{ (isset($selectedMonth) && (int)$selectedMonth === $m) ? 'selected' : '' }}>{{ $monthNames[$m] }}</option>
+                @endfor
+              </select>
+            </div>
+            <div class="col-md-4">
+              <button type="submit" class="btn btn-primary">Aplicar</button>
+            </div>
+          </form>
+          <br>
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0">
+              @if(($trendGranularity ?? 'monthly') === 'daily')
+                Tendencia diaria de pacientes con diabetes ({{ $monthNames[$selectedMonth] ?? '' }} {{ $selectedYear ?? '' }})
+              @else
+                Tendencia mensual de pacientes con diabetes ({{ $selectedYear ?? '' }})
+              @endif
+            </h6>
+            <div class="avatar">
+              <div class="avatar-initial bg-label-danger rounded">
+                <i class="bx bx-trending-up bx-lg"></i>
+              </div>
             </div>
           </div>
-          <div class="col-sm-5 text-center text-sm-left">
-            <div class="card-body pb-0 px-0 px-md-6">
-              <img
-                src="/plantilla/assets/img/illustrations/man-with-laptop.png"
-                height="175"
-                alt="View Badge User" />
-            </div>
-          </div>
+          <canvas id="diabetesTrendChart" height="80"></canvas>
         </div>
       </div>
     </div>
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  (function() {
+    const labels = @json($trendLabels ?? []);
+    const dataCounts = @json($trendCounts ?? []);
+    const dataCountsNeg = @json($trendCountsNeg ?? []);
+
+    const ctx = document.getElementById('diabetesTrendChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Positivos (Diabetes)',
+            data: dataCounts,
+            fill: false,
+            borderColor: 'rgba(220, 53, 69, 1)',
+            backgroundColor: 'rgba(220, 53, 69, 0.2)',
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2
+          },
+          {
+            label: 'Negativos (Sin diabetes)',
+            data: dataCountsNeg,
+            fill: false,
+            borderColor: 'rgba(13, 110, 253, 1)',
+            backgroundColor: 'rgba(13, 110, 253, 0.2)',
+            tension: 0.3,
+            pointRadius: 3,
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: true },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: { title: { display: true, text: '{{ (($trendGranularity ?? 'monthly') === 'daily') ? 'Día' : 'Mes' }}' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Cantidad' }, ticks: { precision: 0 } }
+        }
+      }
+    });
+  })();
+</script>
+@endpush
