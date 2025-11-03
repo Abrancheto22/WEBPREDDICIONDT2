@@ -743,47 +743,47 @@ class PrediccionController extends Controller
         // Reemplazar **texto** con <strong>texto</strong>
         $text = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $text);
 
-        // Agregar iconos específicos a títulos y secciones importantes
-        $text = preg_replace('/<h3>(.*?ESTRATIFICACIÓN.*?)<\/h3>/i', $text);
-        $text = preg_replace('/<h3>(.*?INTERPRETACIÓN.*?)<\/h3>/i', $text);
-        $text = preg_replace('/<h3>(.*?RECOMENDACIONES.*?)<\/h3>/i', $text);
-        $text = preg_replace('/<h3>(.*?PLAN.*?TERAPÉUTICO.*?)<\/h3>/i', $text);
-        $text = preg_replace('/<h3>(.*?FACTORES.*?RIESGO.*?)<\/h3>/i', $text);
-        $text = preg_replace('/<h3>(.*?CONSIDERACIONES.*?)<\/h3>/i', $text);
+         // Agregar iconos específicos a títulos y secciones importantes
+        $text = preg_replace('/<h3>(.*?ESTRATIFICACIÓN.*?)<\/h3>/i', '<h3>🎯 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?INTERPRETACIÓN.*?)<\/h3>/i', '<h3>📊 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?RECOMENDACIONES.*?)<\/h3>/i', '<h3>💡 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?PLAN.*?TERAPÉUTICO.*?)<\/h3>/i', '<h3>🏥 $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?FACTORES.*?RIESGO.*?)<\/h3>/i', '<h3>⚠️ $1</h3>', $text);
+        $text = preg_replace('/<h3>(.*?CONSIDERACIONES.*?)<\/h3>/i', '<h3>📋 $1</h3>', $text);
         
         // Agregar iconos a subtítulos h4
-        $text = preg_replace('/<h4>(.*?Clasificación.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Justificación.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Correlación.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Análisis.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Estudios.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Periodicidad.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Criterios.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Intervenciones.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Consideraciones.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Objetivos.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Identificación.*?)<\/h4>/i', $text);
-        $text = preg_replace('/<h4>(.*?Estrategias.*?)<\/h4>/i', $text);
+        $text = preg_replace('/<h4>(.*?Clasificación.*?)<\/h4>/i', '<h4>🔍 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Justificación.*?)<\/h4>/i', '<h4>📝 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Correlación.*?)<\/h4>/i', '<h4>🔗 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Análisis.*?)<\/h4>/i', '<h4>🧪 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Estudios.*?)<\/h4>/i', '<h4>🔬 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Periodicidad.*?)<\/h4>/i', '<h4>📅 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Criterios.*?)<\/h4>/i', '<h4>📏 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Intervenciones.*?)<\/h4>/i', '<h4>🎯 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Consideraciones.*?)<\/h4>/i', '<h4>💊 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Objetivos.*?)<\/h4>/i', '<h4>🎯 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Identificación.*?)<\/h4>/i', '<h4>🔍 $1</h4>', $text);
+        $text = preg_replace('/<h4>(.*?Estrategias.*?)<\/h4>/i', '<h4>📈 $1</h4>', $text);
         
         // Agregar iconos a términos médicos específicos
-        $text = str_replace(['HbA1c', 'Hemoglobina glicosilada'], ['HbA1c', 'Hemoglobina glicosilada'], $text);
-        $text = str_replace(['PTOG', 'Prueba de tolerancia'], ['PTOG', 'Prueba de tolerancia'], $text);
-        $text = str_replace(['glucosa', 'Glucosa'], ['glucosa', 'Glucosa'], $text);
-        $text = str_replace(['insulina', 'Insulina'], ['insulina', 'Insulina'], $text);
-        $text = str_replace(['presión arterial', 'Presión arterial'], ['presión arterial', 'Presión arterial'], $text);
-        $text = str_replace(['BMI', 'IMC'], ['BMI', 'IMC'], $text);
+        $text = str_replace(['HbA1c', 'Hemoglobina glicosilada'], ['🩸 HbA1c', '🩸 Hemoglobina glicosilada'], $text);
+        $text = str_replace(['PTOG', 'Prueba de tolerancia'], ['🥤 PTOG', '🥤 Prueba de tolerancia'], $text);
+        $text = str_replace(['glucosa', 'Glucosa'], ['🍯 glucosa', '🍯 Glucosa'], $text);
+        $text = str_replace(['insulina', 'Insulina'], ['💉 insulina', '💉 Insulina'], $text);
+        $text = str_replace(['presión arterial', 'Presión arterial'], ['❤️ presión arterial', '❤️ Presión arterial'], $text);
+        $text = str_replace(['BMI', 'IMC'], ['⚖️ BMI', '⚖️ IMC'], $text);
         
         // Agregar iconos a niveles de riesgo
-        $text = str_replace(['ALTO riesgo', 'Alto riesgo'], ['ALTO riesgo', 'Alto riesgo'], $text);
-        $text = str_replace(['MODERADO riesgo', 'Moderado riesgo'], ['MODERADO riesgo', 'Moderado riesgo'], $text);
-        $text = str_replace(['BAJO riesgo', 'Bajo riesgo'], ['BAJO riesgo', 'Bajo riesgo'], $text);
+        $text = str_replace(['ALTO riesgo', 'Alto riesgo'], ['🔴 ALTO riesgo', '🔴 Alto riesgo'], $text);
+        $text = str_replace(['MODERADO riesgo', 'Moderado riesgo'], ['🟡 MODERADO riesgo', '🟡 Moderado riesgo'], $text);
+        $text = str_replace(['BAJO riesgo', 'Bajo riesgo'], ['🟢 BAJO riesgo', '🟢 Bajo riesgo'], $text);
         
         // Agregar iconos a recomendaciones comunes
-        $text = str_replace(['dieta', 'Dieta'], ['dieta', 'Dieta'], $text);
-        $text = str_replace(['ejercicio', 'Ejercicio'], ['ejercicio', 'Ejercicio'], $text);
-        $text = str_replace(['peso', 'Peso'], ['peso', 'Peso'], $text);
-        $text = str_replace(['seguimiento', 'Seguimiento'], ['seguimiento', 'Seguimiento'], $text);
-        $text = str_replace(['control', 'Control'], ['control', 'Control'], $text);
+        $text = str_replace(['dieta', 'Dieta'], ['🥗 dieta', '🥗 Dieta'], $text);
+        $text = str_replace(['ejercicio', 'Ejercicio'], ['🏃‍♂️ ejercicio', '🏃‍♂️ Ejercicio'], $text);
+        $text = str_replace(['peso', 'Peso'], ['⚖️ peso', '⚖️ Peso'], $text);
+        $text = str_replace(['seguimiento', 'Seguimiento'], ['📋 seguimiento', '📋 Seguimiento'], $text);
+        $text = str_replace(['control', 'Control'], ['🎛️ control', '🎛️ Control'], $text);
 
         // Convertir listas con viñetas (*) en listas HTML
         $text = preg_replace('/^\* (.*?)(\n|$)/m', '<li>$1</li>', $text);
