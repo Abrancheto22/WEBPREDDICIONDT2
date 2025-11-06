@@ -84,7 +84,8 @@ class PrediccionController extends Controller
             $startTime = now();
             Session::put('prediccion_start_time', $startTime);
 
-            $mlApiUrl = 'http://127.0.0.1:5000/predict';
+            // Usa tu dominio de Vercel y el endpoint /predict
+            $mlApiUrl = 'https://appml-tesis.vercel.app/predict';
 
             $response = Http::post($mlApiUrl, [
                 'Pregnancies' => (float)$validated['embarazos'],
