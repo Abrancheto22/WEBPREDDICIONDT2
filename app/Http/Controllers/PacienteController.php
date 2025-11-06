@@ -74,6 +74,9 @@ class PacienteController extends Controller
                 $path = $file->move(public_path('images/pacientes'), $nombreImagen);
                 $paciente->imagen = 'images/pacientes/' . $nombreImagen;
             }
+        } else {
+            // Asignar imagen por defecto si no se sube ninguna
+            $paciente->imagen = 'plantilla/assets/img/avatars/default.webp';
         }
 
         $paciente->save();
@@ -152,9 +155,18 @@ class PacienteController extends Controller
                 $path = $file->move(public_path('images/pacientes'), $nombreImagen);
                 $paciente->imagen = 'images/pacientes/' . $nombreImagen;
             }
+        } elseif (empty($paciente->imagen)) {
+            // Asignar imagen por defecto si no hay existente y no se sube nueva
+            $paciente->imagen = 'plantilla/assets/img/avatars/default.webp';
         }
 
         $paciente->save();
+
+        $authUser = Auth::user();
+        $role = (int) ($authUser->idrol ?? 0);
+        if ($role === 4) {
+            return redirect()->route('profile')->with('success', 'Perfil actualizado exitosamente');
+        }
 
         return redirect()->route('pacientes.index')->with('success', 'Paciente actualizado exitosamente');
     }
@@ -171,5 +183,51 @@ class PacienteController extends Controller
         $paciente->delete();
         
         return redirect()->route('pacientes.index')->with('success', 'Paciente eliminado exitosamente');
+    }
+
+    public function panel(Request $request)
+    {
+        $user = Auth::user();
+
+        $role = (int) ($user->idrol ?? 0);
+        $isPaciente = $role === 4;
+        $isAdminOrEnfermera = in_array($role, [1, 3], true);
+
+        $pacientesList = collect();
+        $paciente = null;
+
+        if ($isPaciente) {
+            // Obtener el paciente asociado al usuario autenticado usando la relación
+            $paciente = $user->paciente()
+                ->with(['citas.triaje', 'citas.prediccion', 'citas.doctor.usuario'])
+                ->first();
+
+            if (!$paciente) {
+                return view('pacientes.panel', [
+                    'pacientes' => $pacientesList,
+                    'selectedPaciente' => null,
+                    'citas' => collect(),
+                    'isAdminOrEnfermera' => false,
+                ]);
+            }
+        } elseif ($isAdminOrEnfermera) {
+            // Cargar lista para selector
+            $pacientesList = Paciente::orderBy('apellido')->orderBy('nombre')->get(['idpaciente','nombre','apellido','DNI']);
+
+            $selectedId = $request->input('idpaciente');
+            if ($selectedId) {
+                $paciente = Paciente::with(['citas.triaje', 'citas.prediccion', 'citas.doctor.usuario'])
+                    ->find($selectedId);
+            }
+        }
+
+        $citas = $paciente ? $paciente->citas()->with(['triaje', 'prediccion', 'doctor.usuario'])->orderByDesc('fecha_cita')->get() : collect();
+
+        return view('pacientes.panel', [
+            'pacientes' => $pacientesList,
+            'selectedPaciente' => $paciente,
+            'citas' => $citas,
+            'isAdminOrEnfermera' => $isAdminOrEnfermera,
+        ]);
     }
 }

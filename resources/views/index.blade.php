@@ -4,9 +4,42 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
+  @if(auth()->user() && auth()->user()->idrol == 1)
   <div class="row">
-    <!-- Tarjeta de Total de Predicciones -->
-    <div class="col-md-6 col-xxl-3 mb-4">
+    <!-- Filtros -->
+    <div class="col-12 mb-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <form method="GET" action="{{ route('dashboard') }}" class="row g-3 align-items-end">
+            <div class="col-sm-6 col-md-4">
+              <label for="year" class="form-label">Año</label>
+              @php $currentYear = now()->year; @endphp
+              <select id="year" name="year" class="form-select">
+                @for($y = $currentYear; $y >= $currentYear - 5; $y--)
+                  <option value="{{ $y }}" {{ (isset($selectedYear) && (int)$selectedYear === $y) ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+              </select>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <label for="month" class="form-label">Mes</label>
+              @php $monthNames = [1=>'Enero',2=>'Febrero',3=>'Marzo',4=>'Abril',5=>'Mayo',6=>'Junio',7=>'Julio',8=>'Agosto',9=>'Septiembre',10=>'Octubre',11=>'Noviembre',12=>'Diciembre']; @endphp
+              <select id="month" name="month" class="form-select">
+                <option value="">Todos</option>
+                @for($m = 1; $m <= 12; $m++)
+                  <option value="{{ $m }}" {{ (isset($selectedMonth) && (int)$selectedMonth === $m) ? 'selected' : '' }}>{{ $monthNames[$m] }}</option>
+                @endfor
+              </select>
+            </div>
+            <div class="col-sm-12 col-md-4 d-grid">
+              <button type="submit" class="btn btn-primary">Aplicar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="col-sm-6 col-lg-4 mb-4">
       <div class="card h-100">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between">
@@ -24,9 +57,8 @@
         </div>
       </div>
     </div>
-    
-    <!-- Tarjeta de Tiempo Promedio por Predicción -->
-    <div class="col-md-6 col-xxl-3 mb-4">
+
+    <div class="col-sm-6 col-lg-4 mb-4">
       <div class="card h-100">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between">
@@ -53,9 +85,8 @@
         </div>
       </div>
     </div>
-    
-    <!-- Tarjeta de Tiempo Total de Predicciones -->
-    <div class="col-md-6 col-xxl-3 mb-4">
+
+    <div class="col-sm-6 col-lg-4 mb-4">
       <div class="card h-100">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between">
@@ -82,34 +113,11 @@
         </div>
       </div>
     </div>
+
+    <!-- Gráfico -->
     <div class="col-12 mb-4">
-      <div class="card mb-4">
+      <div class="card h-100">
         <div class="card-body">
-          <form method="GET" action="{{ route('dashboard') }}" class="row g-3 align-items-end">
-            <div class="col-md-4">
-              <label for="year" class="form-label">Año</label>
-              @php $currentYear = now()->year; @endphp
-              <select id="year" name="year" class="form-select">
-                @for($y = $currentYear; $y >= $currentYear - 5; $y--)
-                  <option value="{{ $y }}" {{ (isset($selectedYear) && (int)$selectedYear === $y) ? 'selected' : '' }}>{{ $y }}</option>
-                @endfor
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="month" class="form-label">Mes</label>
-              @php $monthNames = [1=>'Enero',2=>'Febrero',3=>'Marzo',4=>'Abril',5=>'Mayo',6=>'Junio',7=>'Julio',8=>'Agosto',9=>'Septiembre',10=>'Octubre',11=>'Noviembre',12=>'Diciembre']; @endphp
-              <select id="month" name="month" class="form-select">
-                <option value="">Todos</option>
-                @for($m = 1; $m <= 12; $m++)
-                  <option value="{{ $m }}" {{ (isset($selectedMonth) && (int)$selectedMonth === $m) ? 'selected' : '' }}>{{ $monthNames[$m] }}</option>
-                @endfor
-              </select>
-            </div>
-            <div class="col-md-4">
-              <button type="submit" class="btn btn-primary">Aplicar</button>
-            </div>
-          </form>
-          <br>
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h6 class="mb-0">
               @if(($trendGranularity ?? 'monthly') === 'daily')
@@ -129,10 +137,23 @@
       </div>
     </div>
   </div>
+  @else
+  <div class="row">
+    <div class="col-12">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Dashboard</h5>
+          <p class="mb-0">Bienvenido. Actualmente no tienes acceso a los indicadores avanzados del panel. Contacta al administrador si necesitas más permisos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
 </div>
 @endsection
 
 @push('scripts')
+@if(auth()->user() && auth()->user()->idrol == 1)
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
   (function() {
@@ -186,4 +207,5 @@
     });
   })();
 </script>
+@endif
 @endpush

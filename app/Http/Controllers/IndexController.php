@@ -21,17 +21,29 @@ class IndexController extends Controller
 
     public function dashboard(Request $request)
     {
-        // Obtener todos los registros de predicción con sus timers
-        $predicciones = \App\Models\Prediccion::all(['timer']);
-        
+        // Año y mes seleccionados desde los filtros del dashboard
+        $selectedYear = (int)($request->input('year', date('Y')));
+        $selectedMonth = $request->filled('month') ? (int)$request->input('month') : null; // 1-12
+
+        // Obtener registros filtrados por año/mes (si aplica) para KPIs
+        $kpiQuery = \App\Models\Prediccion::query()
+            ->whereNotNull('timer_parada')
+            ->whereYear('timer_parada', $selectedYear);
+
+        if ($selectedMonth) {
+            $kpiQuery->whereMonth('timer_parada', $selectedMonth);
+        }
+
+        $predicciones = $kpiQuery->get(['timer']);
+
         // Para depuración: Pasar los valores crudos a la vista
         $valoresTimer = [];
         $suma = 0;
-        
+
         foreach ($predicciones as $prediccion) {
             $valor = $prediccion->timer;
             $valoresTimer[] = $valor;
-            
+
             // Intentar convertir a número
             $valorNumerico = 0;
             if (is_numeric($valor)) {
@@ -43,15 +55,12 @@ class IndexController extends Controller
                     $valorNumerico = (float)$valor;
                 }
             }
-            
+
             $suma += $valorNumerico;
         }
-        
+
         $totalPredicciones = count($predicciones);
         $tiempoPromedio = $totalPredicciones > 0 ? $suma / $totalPredicciones : 0;
-
-        $selectedYear = (int)($request->input('year', date('Y')));
-        $selectedMonth = $request->filled('month') ? (int)$request->input('month') : null; // 1-12
 
         $query = \App\Models\Prediccion::query()
             ->whereNotNull('timer_parada')

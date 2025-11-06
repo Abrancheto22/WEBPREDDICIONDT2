@@ -63,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/enfermeras/{idenfermera}', [EnfermeraController::class, 'destroy'])->name('enfermeras.destroy');
     
     /*Rutas de pacientes*/
+    // Definir rutas fijas ANTES del resource para evitar colisiones con /pacientes/{id}
+    Route::get('/pacientes/panel', [PacienteController::class, 'panel'])->name('pacientes.panel');
     Route::resource('pacientes', PacienteController::class);
     Route::get('/pacientes/{idpaciente}', [PacienteController::class, 'show'])->name('pacientes.show');
     Route::get('/pacientes/create', [PacienteController::class, 'create'])->name('pacientes.create');

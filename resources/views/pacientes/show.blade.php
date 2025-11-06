@@ -81,7 +81,7 @@
                                         @forelse ($paciente->citas as $cita)
                                             <tr>
                                                 <td>{{ $cita->idcita }}</td>
-                                                <td>{{ $cita->fecha_hora }}</td>
+                                                <td>{{ $cita->fecha_cita }} {{ $cita->hora_cita }}</td>
                                                 <td>
                                                     @if ($cita->doctor && $cita->doctor->usuario)
                                                         {{ $cita->doctor->usuario->name }}
@@ -108,31 +108,36 @@
                                         <tr>
                                             <th>ID</th>
                                             <th>Fecha Cita</th>
-                                            <th>Síntomas</th>
-                                            <th>Presión Arterial</th>
-                                            <th>Frecuencia Cardiaca</th>
-                                            <th>Temperatura</th>
-                                            <th>Saturación Oxígeno</th>
+                                            <th>Edad</th>
+                                            <th>Talla</th>
+                                            <th>Peso</th>
+                                            <th>BMI</th>
+                                            <th>Grosor Piel</th>
+                                            <th>Observaciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse ($paciente->citas as $cita)
+                                        @php $triajeRows = 0; @endphp
+                                        @foreach ($paciente->citas as $cita)
                                             @if ($cita->triaje)
+                                                @php $triajeRows++; @endphp
                                                 <tr>
                                                     <td>{{ $cita->triaje->idtriaje }}</td>
-                                                    <td>{{ $cita->fecha_hora }}</td>
-                                                    <td>{{ $cita->triaje->sintomas }}</td>
-                                                    <td>{{ $cita->triaje->presion_arterial }}</td>
-                                                    <td>{{ $cita->triaje->frecuencia_cardiaca }}</td>
-                                                    <td>{{ $cita->triaje->temperatura }}</td>
-                                                    <td>{{ $cita->triaje->saturacion_oxigeno }}</td>
+                                                    <td>{{ $cita->fecha_cita }} {{ $cita->hora_cita }}</td>
+                                                    <td>{{ $cita->triaje->edad }}</td>
+                                                    <td>{{ $cita->triaje->talla }}</td>
+                                                    <td>{{ $cita->triaje->peso }}</td>
+                                                    <td>{{ $cita->triaje->BMI }}</td>
+                                                    <td>{{ $cita->triaje->grosor_piel }}</td>
+                                                    <td>{{ $cita->triaje->observaciones }}</td>
                                                 </tr>
                                             @endif
-                                        @empty
+                                        @endforeach
+                                        @if ($triajeRows === 0)
                                             <tr>
-                                                <td colspan="7" class="text-center">No hay triajes registrados.</td>
+                                                <td colspan="8" class="text-center">No hay triajes registrados.</td>
                                             </tr>
-                                        @endforelse
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>
@@ -150,22 +155,25 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse ($predicciones as $prediccion)
-                                            @if ($prediccion)
+                                        @php $predRows = 0; @endphp
+                                        @foreach ($paciente->citas as $cita)
+                                            @if ($cita->prediccion)
+                                                @php $predRows++; @endphp
                                                 <tr>
-                                                    <td>{{ $prediccion->idprediccion }}</td>
-                                                    <td>{{ $prediccion->fecha_prediccion }}</td>
-                                                    <td>{{ $prediccion->resultado_prediccion }}</td>
+                                                    <td>{{ $cita->prediccion->idprediccion }}</td>
+                                                    <td>{{ $cita->fecha_cita }}</td>
+                                                    <td>{{ number_format($cita->prediccion->resultado, 2) }}</td>
                                                     <td>
-                                                        <a href="{{ route('predicciones.show', $prediccion->idprediccion) }}" class="btn btn-info btn-sm">Ver Detalles</a>
+                                                        <a href="{{ route('predicciones.show', $cita->prediccion->idprediccion) }}" class="btn btn-info btn-sm">Ver Detalles</a>
                                                     </td>
                                                 </tr>
                                             @endif
-                                        @empty
+                                        @endforeach
+                                        @if ($predRows === 0)
                                             <tr>
                                                 <td colspan="4" class="text-center">No hay predicciones registradas.</td>
                                             </tr>
-                                        @endforelse
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>

@@ -9,9 +9,14 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Lista de Pacientes</h5>
-                    <a href="{{ route('pacientes.create') }}" class="btn btn-primary">
-                        <i class="bx bx-plus"></i> Nuevo Paciente
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('pacientes.panel') }}" class="btn btn-outline-secondary">
+                            <i class="bx bx-grid-alt"></i> Panel de Paciente
+                        </a>
+                        <a href="{{ route('pacientes.create') }}" class="btn btn-primary">
+                            <i class="bx bx-plus"></i> Nuevo Paciente
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body table-responsive p-0">
                     <table class="table table-hover text-nowrap">
@@ -55,6 +60,9 @@
                                     <div class="btn-group">
                                         <a href="{{ route('pacientes.show', $paciente->idpaciente) }}" class="btn btn-sm btn-info">
                                             <i class="bx bx-show"></i>
+                                        </a>
+                                        <a href="{{ route('pacientes.panel', ['idpaciente' => $paciente->idpaciente]) }}" class="btn btn-sm btn-secondary" title="Abrir Panel">
+                                            <i class="bx bx-dock-top"></i>
                                         </a>
                                         <a href="{{ route('pacientes.edit', $paciente->idpaciente) }}" class="btn btn-sm btn-warning">
                                             <i class="bx bx-edit"></i>
