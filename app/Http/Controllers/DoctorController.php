@@ -6,6 +6,7 @@ use App\Models\Doctor;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class DoctorController extends Controller
 {
@@ -142,6 +143,13 @@ class DoctorController extends Controller
         }
 
         $doctor->save();
+
+        // Si el usuario autenticado es doctor y está editando su propio perfil, redirigir al dashboard
+        $authUser = Auth::user();
+        $role = (int) ($authUser->idrol ?? 0);
+        if ($role === 2) {
+            return redirect()->route('profile')->with('success', 'Perfil de doctor actualizado exitosamente');
+        }
 
         return redirect()->route('doctores.index')->with('success', 'Doctor actualizado exitosamente');
     }

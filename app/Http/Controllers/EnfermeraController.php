@@ -6,6 +6,7 @@ use App\Models\Enfermera;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class EnfermeraController extends Controller
 {
@@ -127,6 +128,13 @@ class EnfermeraController extends Controller
         }
 
         $enfermera->save();
+
+        // Si el usuario autenticado es enfermera y está editando su propio perfil, redirigir al perfil
+        $authUser = Auth::user();
+        $role = (int) ($authUser->idrol ?? 0);
+        if ($role === 3) {
+            return redirect()->route('profile')->with('success', 'Perfil de enfermera actualizado exitosamente');
+        }
 
         return redirect()->route('enfermeras.index')->with('success', 'Enfermera actualizada exitosamente');
     }
