@@ -102,6 +102,21 @@
                                     @enderror
                                 </div>
                                 <div class="col-md-6">
+                                    <label for="sueldo" class="form-label">Sueldo</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        class="form-control @error('sueldo') is-invalid @enderror"
+                                        id="sueldo"
+                                        name="sueldo"
+                                        value="{{ old('sueldo') }}"
+                                        required />
+                                    @error('sueldo')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-6">
                                     <label for="iduser" class="form-label">Usuario</label>
                                     <select
                                         class="form-select @error('iduser') is-invalid @enderror"

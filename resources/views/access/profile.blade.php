@@ -58,6 +58,11 @@
                                     <p class="mb-0">{{ $profileData->especialidad }}</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
+                                    <label class="form-label">Sueldo</label>
+                                    <p class="mb-0">
+                                        S/. {{ number_format($profileData->sueldo, 2) }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label">Nombre</label>
                                     <p class="mb-0">{{ $profileData->nombre }} {{ $profileData->apellido }}</p>
                                 </div>

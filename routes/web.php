@@ -45,6 +45,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/users/{id}', [IndexController::class, 'deleteUser'])->name('users.destroy');
     
     /*Rutas de doctores*/
+    Route::get('/doctores/costos', [DoctorController::class, 'costos'])->name('doctores.costos');
+    Route::get('/doctores/costos/export', [DoctorController::class, 'exportCostos'])->name('doctores.costos.export');
     Route::resource('doctores', DoctorController::class);
     Route::get('/doctores/{iddoctor}', [DoctorController::class, 'show'])->name('doctores.show');
     Route::get('/doctores/create', [DoctorController::class, 'create'])->name('doctores.create');

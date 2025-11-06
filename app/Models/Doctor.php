@@ -20,7 +20,8 @@ class Doctor extends Model
         'numero',
         'especialidad',
         'imagen',
-        'iduser'
+        'iduser',
+        'sueldo'
     ];
 
     protected $hidden = [

@@ -106,6 +106,11 @@
                                 <div class="text-truncate" data-i18n="Without menu">Pacientes</div>
                             </a>
                         </li>
+                        <li class="menu-item">
+                            <a href="{{ route('doctores.costos') }}" class="menu-link">
+                                <div class="text-truncate" data-i18n="Without menu">Costos Operacionales</div>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 @endif

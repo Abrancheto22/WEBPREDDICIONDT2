@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Exports\DoctorCostosExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DoctorController extends Controller
 {
@@ -41,6 +43,7 @@ class DoctorController extends Controller
             'apellido' => 'required|string|max:100',
             'numero' => 'required|string|max:20',
             'especialidad' => 'required|string|max:100',
+            'sueldo' => 'required|numeric|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'iduser' => 'required|exists:users,id|unique:doctor,iduser',
         ]);
@@ -51,6 +54,7 @@ class DoctorController extends Controller
         $doctor->apellido = $request->apellido;
         $doctor->numero = $request->numero;
         $doctor->especialidad = $request->especialidad;
+        $doctor->sueldo = $request->sueldo;
         $doctor->iduser = $request->iduser;
 
         if ($request->hasFile('imagen')) {
@@ -106,6 +110,7 @@ class DoctorController extends Controller
             'apellido' => 'required|string|max:100',
             'numero' => 'required|string|max:20',
             'especialidad' => 'required|string|max:100',
+            'sueldo' => 'required|numeric|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'iduser' => 'required|exists:users,id|unique:doctor,iduser,' . $iddoctor . ',iddoctor',
         ]);
@@ -115,6 +120,7 @@ class DoctorController extends Controller
         $doctor->apellido = $request->apellido;
         $doctor->numero = $request->numero;
         $doctor->especialidad = $request->especialidad;
+        $doctor->sueldo = $request->sueldo;
         $doctor->iduser = $request->iduser;
 
         // Manejo de la imagen
@@ -162,5 +168,48 @@ class DoctorController extends Controller
         }
         $doctor->delete();
         return redirect()->route('doctores.index')->with('success', 'Doctor eliminado exitosamente');
+    }
+
+    public function costos()
+    {
+        $doctores = Doctor::select('iddoctor','nombre','apellido','sueldo')
+            ->with('usuario')
+            ->get();
+
+        $stats = [];
+        foreach ($doctores as $doc) {
+            $citas = \App\Models\Cita::where('iddoctor', $doc->iddoctor)
+                ->with('prediccion')
+                ->get();
+
+            $predCount = 0;
+            $totalTime = 0.0; // en segundos
+
+            foreach ($citas as $c) {
+                if ($c->prediccion) {
+                    $predCount++;
+                    $t = $c->prediccion->timer;
+                    if (is_numeric($t)) {
+                        $totalTime += (float) $t;
+                    } else if (is_string($t)) {
+                        $num = preg_replace('/[^0-9.]/', '', $t);
+                        $totalTime += (float) $num;
+                    }
+                }
+            }
+
+            $stats[] = [
+                'doctor' => $doc,
+                'pred_count' => $predCount,
+                'total_time' => $totalTime,
+            ];
+        }
+
+        return view('doctores.costos', [ 'stats' => $stats ]);
+    }
+
+    public function exportCostos()
+    {
+        return Excel::download(new DoctorCostosExport, 'costos_doctores.xlsx');
     }
 }
