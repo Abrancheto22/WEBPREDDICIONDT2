@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
     /*Rutas de doctores*/
     Route::get('/doctores/costos', [DoctorController::class, 'costos'])->name('doctores.costos');
     Route::get('/doctores/costos/export', [DoctorController::class, 'exportCostos'])->name('doctores.costos.export');
+    Route::get('/doctores/costos/confusion/export', [DoctorController::class, 'exportConfusion'])->name('doctores.costos.confusion.export');
     Route::resource('doctores', DoctorController::class);
     Route::get('/doctores/{iddoctor}', [DoctorController::class, 'show'])->name('doctores.show');
     Route::get('/doctores/create', [DoctorController::class, 'create'])->name('doctores.create');
@@ -114,5 +115,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/predicciones/pdf/{id}', [PrediccionController::class, 'pdf'])->name('predicciones.pdf');
     Route::post('/predicciones/send-email/{id}', [PrediccionController::class, 'sendEmail'])->name('predicciones.sendEmail');
     Route::get('/predicciones/{id}/attachment/{index}', [PrediccionController::class, 'downloadAttachment'])->name('predicciones.downloadAttachment');
+    Route::post('/predicciones/{idprediccion}/validar', [PrediccionController::class, 'updateValidacion'])->name('predicciones.update_validacion');
    
 });

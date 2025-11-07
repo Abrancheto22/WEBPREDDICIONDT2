@@ -18,8 +18,10 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Paciente</th>
                             <th>Cita</th>
                             <th>Resultado</th>
+                            <th>Validar predicción</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -27,8 +29,36 @@
                         @foreach($predicciones as $prediccion)
                         <tr>
                             <td>{{ $prediccion->idprediccion }}</td>
+                            <td>{{ $prediccion->cita->paciente->nombre . ' ' . $prediccion->cita->paciente->apellido }}</td>
                             <td>{{ $prediccion->cita->idcita }}</td>
+
                             <td>{{number_format($prediccion->resultado, 2) }}</td>
+                            <td>
+                                <div class="btn-group" role="group" aria-label="Validar predicción">
+                                    <input 
+                                        type="radio" 
+                                        class="btn-check validar-radio" 
+                                        name="validar[{{ $prediccion->idprediccion }}]" 
+                                        id="validar-si-{{ $prediccion->idprediccion }}" 
+                                        value="1"
+                                        data-id="{{ $prediccion->idprediccion }}"
+                                        autocomplete="off"
+                                        {{ (isset($prediccion->validar_prediccion) && (int)$prediccion->validar_prediccion === 1) ? 'checked' : '' }}
+                                    >
+                                    <label class="btn btn-sm btn-outline-success" for="validar-si-{{ $prediccion->idprediccion }}">Si</label>
+                                    <input 
+                                        type="radio" 
+                                        class="btn-check validar-radio" 
+                                        name="validar[{{ $prediccion->idprediccion }}]" 
+                                        id="validar-no-{{ $prediccion->idprediccion }}" 
+                                        value="0"
+                                        data-id="{{ $prediccion->idprediccion }}"
+                                        autocomplete="off"
+                                        {{ (isset($prediccion->validar_prediccion) && (int)$prediccion->validar_prediccion === 0) ? 'checked' : '' }}
+                                    >
+                                    <label class="btn btn-sm btn-outline-danger" for="validar-no-{{ $prediccion->idprediccion }}">No</label>
+                                </div>
+                            </td>
                             <td>
                                 <div class="btn-group">
                                     <a href="{{ route('predicciones.show', $prediccion->idprediccion) }}" class="btn btn-sm btn-info">
@@ -55,3 +85,42 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : '';
+
+  function postValidacion(id, valor) {
+    const url = `{{ url('/predicciones') }}/${id}/validar`;
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ validar_prediccion: valor })
+    }).then(async (res) => {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('Error al guardar validación', data);
+      }
+    }).catch(err => console.error('Error de red', err));
+  }
+
+  document.querySelectorAll('.validar-radio').forEach((input) => {
+    input.addEventListener('change', (e) => {
+      const id = e.target.getAttribute('data-id');
+      const valor = e.target.value;
+      if (id && valor) {
+        postValidacion(id, valor);
+      }
+    });
+  });
+});
+</script>
+@endpush

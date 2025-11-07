@@ -30,6 +30,7 @@ class Prediccion extends Model
         'timer_parada', // Agregado
         'attachment_paths', // Agregado para documentos adjuntos
         'attachment_names', // Agregado para nombres de documentos adjuntos
+        'validar_prediccion',
     ];
     
     protected $hidden = [

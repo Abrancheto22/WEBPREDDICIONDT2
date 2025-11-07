@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Doctor;
+use App\Models\Prediccion;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -205,11 +206,40 @@ class DoctorController extends Controller
             ];
         }
 
-        return view('doctores.costos', [ 'stats' => $stats ]);
+        // Calcular matriz de confusión global (umbral 0.35)
+        $TP = 0; $TN = 0; $FP = 0; $FN = 0;
+        $threshold = 0.35;
+        $predicciones = Prediccion::select('resultado', 'validar_prediccion')->get();
+        foreach ($predicciones as $p) {
+            if ($p->validar_prediccion === null) { continue; }
+            $predictedPositive = ((float)$p->resultado) > $threshold;
+            $actualPositive = (int)$p->validar_prediccion === 1;
+            if ($predictedPositive && $actualPositive) { $TP++; }
+            elseif (!$predictedPositive && !$actualPositive) { $TN++; }
+            elseif ($predictedPositive && !$actualPositive) { $FP++; }
+            else { $FN++; }
+        }
+
+        return view('doctores.costos', [ 
+            'stats' => $stats,
+            'confusion' => [
+                'TP' => $TP,
+                'TN' => $TN,
+                'FP' => $FP,
+                'FN' => $FN,
+                'threshold' => $threshold,
+            ],
+        ]);
     }
 
     public function exportCostos()
     {
         return Excel::download(new DoctorCostosExport, 'costos_doctores.xlsx');
+    }
+
+    public function exportConfusion(Request $request)
+    {
+        $threshold = (float) ($request->get('threshold', 0.35));
+        return Excel::download(new \App\Exports\ConfusionMatrixExport($threshold), 'matriz_confusion.xlsx');
     }
 }

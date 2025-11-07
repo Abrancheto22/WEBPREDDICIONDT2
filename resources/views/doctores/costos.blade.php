@@ -58,6 +58,49 @@
         </div>
       </div>
     </div>
+    @isset($confusion)
+    <div class="col-12 mt-3">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Matriz de Confusión Global</h5>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-label-info me-2">Umbral: {{ number_format($confusion['threshold'], 2) }}</span>
+            <a href="{{ route('doctores.costos.confusion.export', ['threshold' => $confusion['threshold']]) }}" class="btn btn-success btn-sm">
+              <i class="bx bx-export"></i> Exportar Excel
+            </a>
+          </div>
+        </div>
+        <div class="card-body table-responsive p-0">
+          <table class="table table-hover text-nowrap mb-0">
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TP</td>
+                <td>{{ $confusion['TP'] }}</td>
+              </tr>
+              <tr>
+                <td>TN</td>
+                <td>{{ $confusion['TN'] }}</td>
+              </tr>
+              <tr>
+                <td>FP</td>
+                <td>{{ $confusion['FP'] }}</td>
+              </tr>
+              <tr>
+                <td>FN</td>
+                <td>{{ $confusion['FN'] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    @endisset
   </div>
 </div>
 @endsection

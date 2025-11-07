@@ -22,7 +22,7 @@ class PrediccionController extends Controller
 {
     public function index()
     {
-        $predicciones = Prediccion::with('cita')->get();
+        $predicciones = Prediccion::with(['cita.paciente'])->get();
         return view('predicciones.index', compact('predicciones'));
     }
 
@@ -657,6 +657,23 @@ class PrediccionController extends Controller
         }
     }
     
+    public function updateValidacion(Request $request, $idprediccion)
+    {
+        $validated = $request->validate([
+            'validar_prediccion' => 'required|in:1,0',
+        ]);
+
+        $prediccion = Prediccion::findOrFail($idprediccion);
+        $prediccion->validar_prediccion = (int) $validated['validar_prediccion'];
+        $prediccion->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Validación actualizada',
+            'validar_prediccion' => (int) $prediccion->validar_prediccion,
+        ]);
+    }
+
     public function destroy($idprediccion)
     {
         $prediccion = Prediccion::findOrFail($idprediccion);
