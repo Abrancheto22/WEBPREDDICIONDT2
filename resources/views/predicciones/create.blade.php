@@ -501,6 +501,216 @@
                                 <input type="file" name="documentos_adjuntos[]" id="documentos_adjuntos" 
                                         class="form-control @error('documentos_adjuntos') is-invalid @enderror" 
                                         multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                <div id="fileLoaderCreate" class="d-none mt-2">
+                                    <div class="d-flex align-items-center text-info">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        <small>Procesando archivos para auto-rellenar campos…</small>
+                                    </div>
+                                </div>
+                                <div id="fileLoaderCreateError" class="d-none mt-2">
+                                    <div class="text-danger">
+                                        <small id="fileLoaderCreateErrorText"></small>
+                                    </div>
+                                </div>
+                                <!-- Librerías para extracción en cliente (sin defer para garantizar disponibilidad inmediata) -->
+                                <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+                                <script src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
+                                <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+                                <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+                                <script>
+                                    (function() {
+                                        function initAutoFillCreate() {
+                                            const inputCreate = document.getElementById('documentos_adjuntos');
+                                            const loaderCreate = document.getElementById('fileLoaderCreate');
+                                            const loaderCreateError = document.getElementById('fileLoaderCreateError');
+                                            const loaderCreateErrorText = document.getElementById('fileLoaderCreateErrorText');
+
+                                            if (inputCreate) {
+                                                inputCreate.addEventListener('change', async function() {
+                                                    if (!inputCreate.files || inputCreate.files.length === 0) return;
+
+                                                    loaderCreate.classList.remove('d-none');
+                                                    loaderCreateError.classList.add('d-none');
+                                                    loaderCreateErrorText.textContent = '';
+
+                                                    try {
+                                                        const aggregatedText = await extractTextFromFiles(inputCreate.files);
+                                                        const fields = extractFieldsFromText(aggregatedText);
+
+                                                        // Auto-rellenar todo excepto Embarazos y Presión Sanguínea
+                                                        fillIfExists('glucosa', fields.glucosa);
+                                                        fillIfExists('grosor_piel', fields.grosor_piel);
+                                                        fillIfExists('insulina', fields.insulina);
+                                                        fillIfExists('BMI', fields.BMI);
+                                                        fillIfExists('pedigree', fields.pedigree);
+                                                        fillIfExists('edad', fields.edad);
+                                                        fillIfExists('observacion', fields.observacion, true);
+                                                    } catch (err) {
+                                                        loaderCreateErrorText.textContent = 'Error al procesar archivo(s): ' + (err?.message || err);
+                                                        loaderCreateError.classList.remove('d-none');
+                                                    } finally {
+                                                        loaderCreate.classList.add('d-none');
+                                                    }
+                                                });
+                                            }
+
+                                            function fillIfExists(id, value, isText = false) {
+                                                if (value === undefined || value === null || value === '') return;
+                                                const el = document.getElementById(id);
+                                                if (!el) return;
+                                                if (isText) {
+                                                    el.value = value;
+                                                } else {
+                                                    const num = Number(value);
+                                                    if (!Number.isFinite(num)) return;
+                                                    el.value = String(num);
+                                                }
+                                            }
+
+                                            async function extractTextFromFiles(fileList) {
+                                                let allText = '';
+                                                for (const file of fileList) {
+                                                    const type = (file.type || '').toLowerCase();
+                                                    const name = (file.name || '').toLowerCase();
+
+                                                    if (type.includes('pdf') || name.endsWith('.pdf')) {
+                                                        allText += '\n' + await parsePDF(file);
+                                                    } else if (name.endsWith('.docx')) {
+                                                        allText += '\n' + await parseDOCX(file);
+                                                    } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
+                                                        allText += '\n' + await parseXLSX(file);
+                                                    } else if (type.startsWith('image/') || ['.jpg','.jpeg','.png','.gif'].some(ext => name.endsWith(ext))) {
+                                                        allText += '\n' + await parseImageOCR(file);
+                                                    } else {
+                                                        allText += '\n' + await readAsText(file);
+                                                    }
+                                                }
+                                                return allText;
+                                            }
+
+                                            async function parsePDF(file) {
+                                                try {
+                                                    if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+                                                        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+                                                    }
+                                                    const arrayBuffer = await file.arrayBuffer();
+                                                    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                                                    let text = '';
+                                                    for (let i = 1; i <= pdf.numPages; i++) {
+                                                        const page = await pdf.getPage(i);
+                                                        const content = await page.getTextContent();
+                                                        const strings = content.items.map(item => item.str);
+                                                        text += '\n' + strings.join(' ');
+                                                    }
+                                                    return text;
+                                                } catch (e) {
+                                                    throw new Error('PDF no pudo ser leído: ' + (e?.message || e));
+                                                }
+                                            }
+
+                                            async function parseDOCX(file) {
+                                                const arrayBuffer = await file.arrayBuffer();
+                                                const result = await window.mammoth.extractRawText({ arrayBuffer });
+                                                return result.value || '';
+                                            }
+
+                                            async function parseXLSX(file) {
+                                                const arrayBuffer = await file.arrayBuffer();
+                                                const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
+                                                let text = '';
+                                                workbook.SheetNames.forEach(sheetName => {
+                                                    const sheet = workbook.Sheets[sheetName];
+                                                    const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                                                    rows.forEach(row => {
+                                                        text += '\n' + row.join(' ');
+                                                    });
+                                                });
+                                                return text;
+                                            }
+
+                                            async function parseImageOCR(file) {
+                                                const blobUrl = URL.createObjectURL(file);
+                                                try {
+                                                    const res = await window.Tesseract.recognize(blobUrl, 'spa+eng', { logger: () => {} });
+                                                    URL.revokeObjectURL(blobUrl);
+                                                    return res?.data?.text || '';
+                                                } catch (e) {
+                                                    URL.revokeObjectURL(blobUrl);
+                                                    throw new Error('OCR no pudo interpretar la imagen: ' + (e?.message || e));
+                                                }
+                                            }
+
+                                            async function readAsText(file) {
+                                                return new Promise((resolve, reject) => {
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => resolve(reader.result || '');
+                                                    reader.onerror = reject;
+                                                    reader.readAsText(file);
+                                                });
+                                            }
+
+                                            function extractFieldsFromText(text) {
+                                                const t = (text || '').replace(/\s+/g, ' ').trim();
+
+                                                // Embarazos (acepta "Número de Embarazos")
+                                                const embarazosMatch = t.match(/(?:n[uú]mero\s+de\s+embarazos|embarazos|pregnancies)\s*[:\-]\s*(\d+)/i);
+                                                const embarazos = embarazosMatch ? Number(embarazosMatch[1]) : undefined;
+
+                                                // Glucosa, tolera (mg/dL)
+                                                const glucosaMatch = t.match(/(?:glucosa(?:\s*\(mg\/dL\))?|glucose)\s*[:\-]\s*(\d+(?:[.,]\d+)?)/i);
+                                                const glucosa = glucosaMatch ? Number(String(glucosaMatch[1]).replace(',', '.')) : undefined;
+
+                                                // Presión sanguínea: capta "140/90" y toma el primero (sistólica)
+                                                const bpMatch = t.match(/(?:presi[oó]n\s*sangu[ií]nea|blood\s*pressure|bp)\s*[:\-]\s*(\d+(?:[.,]\d+)?)(?:\s*\/\s*(\d+(?:[.,]\d+)?))?/i);
+                                                const presion_sanguinea = bpMatch ? Number(String(bpMatch[1]).replace(',', '.')) : undefined;
+
+                                                // Grosor de piel
+                                                const grosorMatch = t.match(/(?:grosor(?:\s*de)?\s*piel|skin\s*thickness)\s*[:\-]\s*(\d+(?:[.,]\d+)?)/i);
+                                                const grosor_piel = grosorMatch ? Number(String(grosorMatch[1]).replace(',', '.')) : undefined;
+
+                                                // Insulina
+                                                const insulinaMatch = t.match(/(?:insulina|insulin)\s*[:\-]\s*(\d+(?:[.,]\d+)?)/i);
+                                                const insulina = insulinaMatch ? Number(String(insulinaMatch[1]).replace(',', '.')) : undefined;
+
+                                                // BMI
+                                                const bmiMatch = t.match(/\bBMI\b\s*[:\-]\s*(\d+(?:[.,]\d+)?)/i);
+                                                const BMI = bmiMatch ? Number(String(bmiMatch[1]).replace(',', '.')) : undefined;
+
+                                                // Función Pedigree de Diabetes
+                                                const pedigreeMatch = t.match(/(?:funci[oó]n\s*pedigree\s*de\s*diabetes|diabetes\s*pedigree|pedigree(?:\s*function)?)\s*[:\-]\s*(\d+(?:[.,]\d+)?)/i);
+                                                const pedigree = pedigreeMatch ? Number(String(pedigreeMatch[1]).replace(',', '.')) : undefined;
+
+                                                // Edad
+                                                const edadMatch = t.match(/(?:edad|age)\s*[:\-]\s*(\d+)/i);
+                                                const edad = edadMatch ? Number(edadMatch[1]) : undefined;
+
+                                                // Observaciones (opcional)
+                                                const obsMatch = t.match(/(?:observaci[oó]n|observations?|notes?)\s*[:\-]\s*(.{1,300})/i);
+                                                const observacion = obsMatch ? obsMatch[1].trim() : '';
+
+                                                return {
+                                                    embarazos,
+                                                    glucosa,
+                                                    presion_sanguinea,
+                                                    grosor_piel,
+                                                    insulina,
+                                                    BMI,
+                                                    pedigree,
+                                                    edad,
+                                                    observacion,
+                                                };
+                                            }
+                                        }
+
+                                        if (document.readyState === 'loading') {
+                                            document.addEventListener('DOMContentLoaded', initAutoFillCreate);
+                                        } else {
+                                            initAutoFillCreate();
+                                        }
+                                    })();
+                                </script>
+
                                 <div class="form-text">
                                     <i class="fas fa-info-circle me-1"></i>
                                     Puedes subir múltiples archivos (PDF, DOC, DOCX, JPG, PNG). Máximo 10MB por archivo.
@@ -737,7 +947,7 @@
         timerInterval = setInterval(updateTimer, 10);
         updateTimer(); // Llamar inmediatamente para evitar retraso inicial
 
-        // --- Lógica para el análisis con IA ---
+    // --- Lógica para el análisis con IA ---
         const analyzeAiBtn = document.getElementById('analyzeAiBtn');
         const analyzeAiBtnText = document.getElementById('analyzeAiBtnText');
         const analyzeAiSpinner = document.getElementById('analyzeAiSpinner');
