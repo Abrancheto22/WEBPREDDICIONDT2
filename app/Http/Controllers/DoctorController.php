@@ -220,6 +220,12 @@ class DoctorController extends Controller
             else { $FN++; }
         }
 
+        // Métricas derivadas
+        $precision = ($TP + $FP) > 0 ? $TP / ($TP + $FP) : 0.0; // PPV
+        $recall    = ($TP + $FN) > 0 ? $TP / ($TP + $FN) : 0.0; // Sensibilidad
+        $f1        = ($precision + $recall) > 0 ? (2 * $precision * $recall) / ($precision + $recall) : 0.0;
+        $accuracy  = ($TP + $TN + $FP + $FN) > 0 ? ($TP + $TN) / ($TP + $TN + $FP + $FN) : 0.0;
+
         return view('doctores.costos', [ 
             'stats' => $stats,
             'confusion' => [
@@ -227,6 +233,10 @@ class DoctorController extends Controller
                 'TN' => $TN,
                 'FP' => $FP,
                 'FN' => $FN,
+                'precision' => $precision,
+                'recall' => $recall,
+                'f1' => $f1,
+                'accuracy' => $accuracy,
                 'threshold' => $threshold,
             ],
         ]);

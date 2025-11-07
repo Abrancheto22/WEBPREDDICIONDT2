@@ -26,6 +26,7 @@ class PrediccionesExport implements FromCollection, WithHeadings, WithMapping
             'Id',
             'Tiempo Inicio',
             'Tiempo Parada',
+            'Resultado',
             'Tiempo de Análisis'
         ];
     }
@@ -39,6 +40,7 @@ class PrediccionesExport implements FromCollection, WithHeadings, WithMapping
             $prediccion->idprediccion,
             $prediccion->timer_inicio,
             $prediccion->timer_parada,
+            $prediccion->resultado,
             $prediccion->timer,
         ];
     }

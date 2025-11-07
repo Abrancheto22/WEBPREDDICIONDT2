@@ -17,7 +17,7 @@ class ConfusionMatrixExport implements FromArray, WithHeadings
 
     public function headings(): array
     {
-        return ['Variable', 'Cantidad', 'Umbral'];
+        return ['TP', 'TN', 'FP', 'FN', 'F1 SCORE (%)', 'PRECISIÓN DEL MODELO (%)'];
     }
 
     public function array(): array
@@ -34,11 +34,20 @@ class ConfusionMatrixExport implements FromArray, WithHeadings
             else { $FN++; }
         }
 
+        $precision = ($TP + $FP) > 0 ? $TP / ($TP + $FP) : 0.0;
+        $recall    = ($TP + $FN) > 0 ? $TP / ($TP + $FN) : 0.0;
+        $f1        = ($precision + $recall) > 0 ? (2 * $precision * $recall) / ($precision + $recall) : 0.0;
+        $accuracy  = ($TP + $TN + $FP + $FN) > 0 ? ($TP + $TN) / ($TP + $TN + $FP + $FN) : 0.0;
+
         return [
-            ['TP', $TP, $this->threshold],
-            ['TN', $TN, $this->threshold],
-            ['FP', $FP, $this->threshold],
-            ['FN', $FN, $this->threshold],
+            [
+                $TP,
+                $TN,
+                $FP,
+                $FN,
+                round($f1 * 100, 2),
+                round($accuracy * 100, 2),
+            ],
         ];
     }
 }

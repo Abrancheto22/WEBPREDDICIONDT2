@@ -71,29 +71,25 @@
           </div>
         </div>
         <div class="card-body table-responsive p-0">
-          <table class="table table-hover text-nowrap mb-0">
-            <thead>
+          <table class="table table-bordered text-nowrap mb-0">
+            <thead class="table-light text-center align-middle">
               <tr>
-                <th>Variable</th>
-                <th>Cantidad</th>
+                <th>TP</th>
+                <th>TN</th>
+                <th>FP</th>
+                <th>FN</th>
+                <th>F1 SCORE (%)</th>
+                <th>PRECISIÓN DEL SISTEMA (%)</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>TP</td>
+              <tr class="text-center">
                 <td>{{ $confusion['TP'] }}</td>
-              </tr>
-              <tr>
-                <td>TN</td>
                 <td>{{ $confusion['TN'] }}</td>
-              </tr>
-              <tr>
-                <td>FP</td>
                 <td>{{ $confusion['FP'] }}</td>
-              </tr>
-              <tr>
-                <td>FN</td>
                 <td>{{ $confusion['FN'] }}</td>
+                <td>{{ number_format(($confusion['f1'] ?? 0) * 100, 2) }}</td>
+                <td>{{ number_format(($confusion['accuracy'] ?? 0) * 100, 2) }}</td>
               </tr>
             </tbody>
           </table>
