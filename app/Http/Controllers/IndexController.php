@@ -10,6 +10,7 @@ use App\Models\Rol;
 use App\Models\Doctor;
 use App\Models\Enfermera;
 use App\Models\Paciente;
+use App\Models\Cita;
 use Carbon\Carbon;
 
 class IndexController extends Controller
@@ -130,7 +131,58 @@ class IndexController extends Controller
                 $trendCountsNeg[] = (int)($countMapNeg[$m] ?? 0);
             }
         }
-        
+        // Doctores y KPIs por doctor seleccionado
+        $doctores = Doctor::select('iddoctor','nombre','apellido','sueldo')->get();
+        $selectedDoctorId = $request->input('doctor_id');
+        $doctorPredCount = null;
+        $doctorCOPG = null;
+
+        if ($selectedDoctorId) {
+            $doctor = $doctores->firstWhere('iddoctor', (int)$selectedDoctorId);
+            if ($doctor) {
+                $citas = Cita::where('iddoctor', $doctor->iddoctor)
+                    ->whereHas('prediccion', function ($q) use ($selectedYear, $selectedMonth) {
+                        $q->whereNotNull('timer_parada')
+                          ->whereYear('timer_parada', $selectedYear);
+                        if ($selectedMonth) {
+                            $q->whereMonth('timer_parada', $selectedMonth);
+                        }
+                    })
+                    ->with(['prediccion' => function ($q) use ($selectedYear, $selectedMonth) {
+                        $q->whereNotNull('timer_parada')
+                          ->whereYear('timer_parada', $selectedYear);
+                        if ($selectedMonth) {
+                            $q->whereMonth('timer_parada', $selectedMonth);
+                        }
+                    }])
+                    ->get();
+
+                $predCount = 0;
+                $totalTime = 0.0;
+                foreach ($citas as $c) {
+                    if ($c->prediccion) {
+                        $predCount++;
+                        $t = $c->prediccion->timer;
+                        if (is_numeric($t)) {
+                            $totalTime += (float) $t;
+                        } elseif (is_string($t)) {
+                            $num = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $t));
+                            $totalTime += (float) $num;
+                        }
+                    }
+                }
+
+                $salary = (float) ($doctor->sueldo ?? 0);
+                $hourly = $salary / 192.0;
+                $totalHours = $totalTime / 3600.0;
+                $totalCost = $hourly * $totalHours;
+                $copg = $predCount > 0 ? ($totalCost / $predCount) : 0.0;
+
+                $doctorPredCount = $predCount;
+                $doctorCOPG = $copg;
+            }
+        }
+
         return view('index', [
             'totalTiempoPrediccion' => $suma,
             'totalPredicciones' => $totalPredicciones,
@@ -142,6 +194,10 @@ class IndexController extends Controller
             'selectedYear' => $selectedYear,
             'selectedMonth' => $selectedMonth,
             'trendGranularity' => $selectedMonth ? 'daily' : 'monthly',
+            'doctores' => $doctores,
+            'selectedDoctorId' => $selectedDoctorId,
+            'doctorPredCount' => $doctorPredCount,
+            'doctorCOPG' => $doctorCOPG,
         ]);
     }
 

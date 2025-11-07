@@ -57,11 +57,8 @@ class DoctorCostosExport implements FromCollection, WithHeadings, WithMapping, S
         $totalCost = $hourly * $totalHours;
         $copg = $predCount > 0 ? ($totalCost / $predCount) : 0;
 
-        $seconds = (int) round($totalTime);
-        $h = intdiv($seconds, 3600);
-        $m = intdiv($seconds % 3600, 60);
-        $s = $seconds % 60;
-        $timeFormatted = sprintf('%02d:%02d:%02d', $h, $m, $s);
+        $totalMinutes = $totalTime / 60;
+        $timeFormatted = number_format($totalMinutes, 2, '.', '');
 
         return [
             $doctor->nombre . ' ' . $doctor->apellido,

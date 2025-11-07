@@ -6,13 +6,13 @@
 <div class="container-xxl flex-grow-1 container-p-y">
   @if(auth()->user() && auth()->user()->idrol == 1)
   <div class="row">
-    <!-- Filtros -->
-    <div class="col-12 mb-4">
+    <!-- Filtro global a ancho completo -->
+    <div class="col-12 mb-3">
       <div class="card h-100">
-        <div class="card-body">
+        <div class="card-body py-3">
           <form method="GET" action="{{ route('dashboard') }}" class="row g-3 align-items-end">
-            <div class="col-sm-6 col-md-4">
-              <label for="year" class="form-label">Año</label>
+            <div class="col-12 col-md-4">
+              <label for="year" class="form-label mb-2">Año</label>
               @php $currentYear = now()->year; @endphp
               <select id="year" name="year" class="form-select">
                 @for($y = $currentYear; $y >= $currentYear - 5; $y--)
@@ -20,8 +20,8 @@
                 @endfor
               </select>
             </div>
-            <div class="col-sm-6 col-md-4">
-              <label for="month" class="form-label">Mes</label>
+            <div class="col-12 col-md-4">
+              <label for="month" class="form-label mb-2">Mes</label>
               @php $monthNames = [1=>'Enero',2=>'Febrero',3=>'Marzo',4=>'Abril',5=>'Mayo',6=>'Junio',7=>'Julio',8=>'Agosto',9=>'Septiembre',10=>'Octubre',11=>'Noviembre',12=>'Diciembre']; @endphp
               <select id="month" name="month" class="form-select">
                 <option value="">Todos</option>
@@ -30,89 +30,135 @@
                 @endfor
               </select>
             </div>
-            <div class="col-sm-12 col-md-4 d-grid">
+            <div class="col-12 col-md-4 d-grid">
+              <label class="form-label d-none d-md-block mb-2">&nbsp;</label>
               <button type="submit" class="btn btn-primary">Aplicar</button>
             </div>
           </form>
         </div>
       </div>
     </div>
+    <!-- Columna izquierda -->
+    <div class="col-12 col-lg-6">
 
-    <!-- KPIs -->
-    <div class="col-sm-6 col-lg-4 mb-4">
+    <!-- Resumen -->
+    <div class="col-12 mb-3">
       <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="me-2">
-              <h6 class="mb-0">Total de Predicciones</h6>
-              <h2 class="mb-2 mt-3">{{ number_format($totalPredicciones) }}</h2>
-              <p class="mb-0">Predicciones realizadas en total</p>
+        <div class="card-header py-2 d-flex align-items-center justify-content-between">
+          <h6 class="mb-0">Resumen</h6>
+        </div>
+        <div class="card-body py-3">
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <div class="border rounded p-3 h-100 d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="text-muted small">Total de Predicciones</div>
+                  <div class="display-6 fs-3 fw-semibold mb-0">{{ number_format($totalPredicciones) }}</div>
+                  <div class="text-muted small">Predicciones realizadas en total</div>
+                </div>
+                <span class="badge bg-label-success"><i class="bx bx-bar-chart-alt-2"></i></span>
+              </div>
             </div>
-            <div class="avatar">
-              <div class="avatar-initial bg-label-success rounded">
-                <i class="bx bx-bar-chart-alt-2 bx-lg"></i>
+            <div class="col-12 col-md-4">
+              <div class="border rounded p-3 h-100 d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="text-muted small">Tiempo Total</div>
+                  @php
+                      $minutos = floor($totalTiempoPrediccion / 60);
+                      $segundos = floor($totalTiempoPrediccion % 60);
+                      $milisegundos = round(fmod($totalTiempoPrediccion, 1) * 100);
+                  @endphp
+                  <div class="fs-5 fw-semibold mb-0">
+                      @if($minutos > 0) {{ $minutos }}<small class="text-muted">m </small> @endif
+                      {{ $segundos }}<small class="text-muted">s </small>
+                      {{ str_pad($milisegundos, 2, '0', STR_PAD_LEFT) }}<small class="text-muted">ms</small>
+                  </div>
+                  <div class="text-muted small">Tiempo total de todas las predicciones</div>
+                </div>
+                <span class="badge bg-label-primary"><i class="bx bx-time-five"></i></span>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="border rounded p-3 h-100 d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="text-muted small">Tiempo Promedio</div>
+                  @php
+                      $promedioMinutos = floor($tiempoPromedio / 60);
+                      $promedioSegundos = floor($tiempoPromedio % 60);
+                      $promedioMilisegundos = round(fmod($tiempoPromedio, 1) * 100);
+                  @endphp
+                  <div class="fs-5 fw-semibold mb-0">
+                      @if($promedioMinutos > 0) {{ $promedioMinutos }}<small class="text-muted">m </small> @endif
+                      {{ $promedioSegundos }}<small class="text-muted">s </small>
+                      {{ str_pad($promedioMilisegundos, 2, '0', STR_PAD_LEFT) }}<small class="text-muted">ms</small>
+                  </div>
+                  <div class="text-muted small">Tiempo promedio por predicción</div>
+                </div>
+                <span class="badge bg-label-info"><i class="bx bx-timer"></i></span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    </div><!-- /Columna izquierda -->
 
-    <div class="col-sm-6 col-lg-4 mb-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="me-2">
-              <h6 class="mb-0">Tiempo Promedio</h6>
-              @php
-                  $promedioMinutos = floor($tiempoPromedio / 60);
-                  $promedioSegundos = floor($tiempoPromedio % 60);
-                  $promedioMilisegundos = round(fmod($tiempoPromedio, 1) * 100);
-              @endphp
-              <h4 class="mb-2 mt-3">
-                  @if($promedioMinutos > 0) {{ $promedioMinutos }}<small class="text-muted">m </small> @endif
-                  {{ $promedioSegundos }}<small class="text-muted">s </small>
-                  {{ str_pad($promedioMilisegundos, 2, '0', STR_PAD_LEFT) }}<small class="text-muted">ms</small>
-              </h4>
-              <p class="mb-0">Tiempo promedio por predicción</p>
-            </div>
-            <div class="avatar">
-              <div class="avatar-initial bg-label-info rounded">
-                <i class="bx bx-timer bx-lg"></i>
+    <!-- Columna derecha -->
+    <div class="col-12 col-lg-6">
+      <!-- Doctor -->
+      <div class="col-12 mb-3">
+        <div class="card h-100">
+          <div class="card-header py-2 d-flex align-items-center justify-content-between">
+            <h6 class="mb-0">Doctor</h6>
+          </div>
+          <div class="card-body py-3">
+            <form method="GET" action="{{ route('dashboard') }}" class="row g-2 align-items-end mb-2">
+              <input type="hidden" name="year" value="{{ $selectedYear }}">
+              <input type="hidden" name="month" value="{{ $selectedMonth }}">
+              <div class="col-8">
+                <label for="doctor_id" class="form-label mb-1">Seleccionar</label>
+                <select id="doctor_id" name="doctor_id" class="form-select form-select-sm">
+                  <option value="">Seleccione un doctor</option>
+                  @foreach(($doctores ?? []) as $doc)
+                    <option value="{{ $doc->iddoctor }}" {{ (isset($selectedDoctorId) && (int)$selectedDoctorId === (int)$doc->iddoctor) ? 'selected' : '' }}>
+                      {{ $doc->nombre }} {{ $doc->apellido }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="col-4 d-grid">
+                <button type="submit" class="btn btn-secondary btn-sm">Cargar</button>
+              </div>
+            </form>
+
+            @if(!empty($selectedDoctorId))
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="border rounded p-2 h-100 d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="text-muted small">Predicciones</div>
+                    <div class="fw-semibold">{{ number_format($doctorPredCount ?? 0) }}</div>
+                  </div>
+                  <span class="badge bg-label-warning"><i class="bx bx-user-check"></i></span>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="border rounded p-2 h-100 d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="text-muted small">COPG</div>
+                    <div class="fw-semibold">S/ {{ number_format(($doctorCOPG ?? 0), 2) }}</div>
+                  </div>
+                  <span class="badge bg-label-dark"><i class="bx bx-dollar"></i></span>
+                </div>
               </div>
             </div>
+            @endif
           </div>
         </div>
       </div>
-    </div>
+    </div><!-- /Columna derecha -->
 
-    <div class="col-sm-6 col-lg-4 mb-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="me-2">
-              <h6 class="mb-0">Tiempo Total</h6>
-              @php
-                  $minutos = floor($totalTiempoPrediccion / 60);
-                  $segundos = floor($totalTiempoPrediccion % 60);
-                  $milisegundos = round(fmod($totalTiempoPrediccion, 1) * 100);
-              @endphp
-              <h4 class="mb-2 mt-3">
-                  @if($minutos > 0) {{ $minutos }}<small class="text-muted">m </small> @endif
-                  {{ $segundos }}<small class="text-muted">s </small>
-                  {{ str_pad($milisegundos, 2, '0', STR_PAD_LEFT) }}<small class="text-muted">ms</small>
-              </h4>
-              <p class="mb-0">Tiempo total de todas las predicciones</p>
-            </div>
-            <div class="avatar">
-              <div class="avatar-initial bg-label-primary rounded">
-                <i class="bx bx-time-five bx-lg"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- Gráfico -->
     <div class="col-12 mb-4">
