@@ -108,7 +108,7 @@
                         </li>
                         <li class="menu-item">
                             <a href="{{ route('doctores.costos') }}" class="menu-link">
-                                <div class="text-truncate" data-i18n="Without menu">Costos Operacionales</div>
+                                <div class="text-truncate" data-i18n="Without menu">Indicadores</div>
                             </a>
                         </li>
                     </ul>
