@@ -7,12 +7,15 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Lista de Doctores</h5>
-                    <a href="{{ route('doctores.create') }}" class="btn btn-primary">
-                        <i class="bx bx-plus"></i> Nuevo Doctor
-                    </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="text" id="search-doctores" class="form-control form-control-sm" placeholder="Buscar..." />
+                        <a href="{{ route('doctores.create') }}" class="btn btn-primary">
+                            <i class="bx bx-plus"></i> Nuevo Doctor
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body table-responsive p-0">
-                    <table class="table table-hover text-nowrap">
+                    <table class="table table-hover text-nowrap" id="table-doctores">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -76,3 +79,21 @@
 @endsection
 
 @section('title', 'Doctores')
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('search-doctores');
+  const table = document.getElementById('table-doctores');
+  if (!input || !table) return;
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  input.addEventListener('input', function () {
+    const q = normalize(this.value);
+    rows.forEach(tr => {
+      const text = normalize(tr.innerText);
+      tr.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+});
+</script>
+@endpush

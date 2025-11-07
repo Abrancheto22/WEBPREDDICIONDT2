@@ -6,6 +6,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Citas Médicas</h1>
+        <input type="text" id="search-citas-doc" class="form-control form-control-sm" placeholder="Buscar..." style="max-width: 240px;" />
     </div>
 
     {{-- Filtro de Estado con estilo de Bootstrap --}}
@@ -25,7 +26,7 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped" id="table-citas-doc">
                     <thead>
                         <tr>
                             <th>ID Cita</th>
@@ -74,3 +75,22 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('search-citas-doc');
+  const table = document.getElementById('table-citas-doc');
+  if (!input || !table) return;
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  input.addEventListener('input', function () {
+    const q = normalize(this.value);
+    rows.forEach(tr => {
+      const text = normalize(tr.innerText);
+      tr.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+});
+</script>
+@endpush

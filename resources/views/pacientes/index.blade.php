@@ -9,7 +9,8 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Lista de Pacientes</h5>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 align-items-center">
+                        <input type="text" id="search-pacientes" class="form-control form-control-sm" placeholder="Buscar..." />
                         <a href="{{ route('pacientes.panel') }}" class="btn btn-outline-secondary">
                             <i class="bx bx-grid-alt"></i> Panel de Paciente
                         </a>
@@ -19,7 +20,7 @@
                     </div>
                 </div>
                 <div class="card-body table-responsive p-0">
-                    <table class="table table-hover text-nowrap">
+                    <table class="table table-hover text-nowrap" id="table-pacientes">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -86,3 +87,22 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('search-pacientes');
+  const table = document.getElementById('table-pacientes');
+  if (!input || !table) return;
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  input.addEventListener('input', function () {
+    const q = normalize(this.value);
+    rows.forEach(tr => {
+      const text = normalize(tr.innerText);
+      tr.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+});
+</script>
+@endpush

@@ -10,9 +10,12 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Lista de Triajes</h5>
-                        <a href="{{ route('triajes.create') }}" class="btn btn-primary">
-                            <i class="bx bx-plus"></i> Nuevo Triaje
-                        </a>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" id="search-triajes" class="form-control form-control-sm" placeholder="Buscar..." />
+                            <a href="{{ route('triajes.create') }}" class="btn btn-primary">
+                                <i class="bx bx-plus"></i> Nuevo Triaje
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -30,7 +33,7 @@
                     @endif
 
                     <div class="table-responsive">
-                        <table class="table table-striped">
+                        <table class="table table-striped" id="table-triajes">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -77,7 +80,7 @@
                     </div>
 
                     <div class="d-flex justify-content-center mt-3">
-                        {{ $triajes->links() }}
+                        {{ $triajes->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
             </div>
@@ -85,3 +88,22 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('search-triajes');
+  const table = document.getElementById('table-triajes');
+  if (!input || !table) return;
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  input.addEventListener('input', function () {
+    const q = normalize(this.value);
+    rows.forEach(tr => {
+      const text = normalize(tr.innerText);
+      tr.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+});
+</script>
+@endpush

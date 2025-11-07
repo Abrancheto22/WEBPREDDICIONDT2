@@ -6,15 +6,18 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Predicciones</h1>
-        <a href="{{ route('predicciones.exportar') }}" class="btn btn-success">
-            <i class='bx bx-file'></i> Exportar a Excel
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" id="search-predicciones" class="form-control form-control-sm" placeholder="Buscar..." />
+            <a href="{{ route('predicciones.exportar') }}" class="btn btn-success">
+                <i class='bx bx-file'></i> Exportar a Excel
+            </a>
+        </div>
     </div>
 
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped" id="table-predicciones">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -121,6 +124,21 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  // Búsqueda en vivo para la tabla de predicciones
+  const inputSearch = document.getElementById('search-predicciones');
+  const table = document.getElementById('table-predicciones');
+  if (inputSearch && table) {
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+    inputSearch.addEventListener('input', function () {
+      const q = normalize(this.value);
+      rows.forEach(tr => {
+        const text = normalize(tr.innerText);
+        tr.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+  }
 });
 </script>
 @endpush
