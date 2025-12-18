@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session; // Importar la clase Session
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
-use function GuzzleHttp\Psr7\mimetype_from_extension;
+use Illuminate\Support\Facades\Storage;
 use App\Exports\PrediccionesExport;
 use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 use Carbon\Carbon; // Importar la clase Carbon
@@ -226,7 +226,7 @@ class PrediccionController extends Controller
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'X-goog-api-key' => $geminiApiKey,
-            ])->post($geminiUrl, [
+            ])->timeout(120)->post($geminiUrl, [
                 'contents' => [
                     [
                         'parts' => $parts
