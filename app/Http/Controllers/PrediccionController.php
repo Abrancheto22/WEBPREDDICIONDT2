@@ -197,21 +197,40 @@ class PrediccionController extends Controller
                 Log::info('Processing attachment: ' . $fullPath);
                 if (file_exists($fullPath)) {
                     $mimeType = mime_content_type($fullPath);
-                    $fileContent = file_get_contents($fullPath);
-                    if ($fileContent === false) {
-                        Log::error('Failed to read file content for: ' . $fullPath);
-                        continue;
-                    }
-                    $base64Content = base64_encode($fileContent);
                     
-                    Log::info('File exists: ' . $fullPath . ', MIME Type: ' . $mimeType . ', Base64 content length: ' . strlen($base64Content));
+                    // Procesar PDF e Imágenes como inline_data
+                    if ($mimeType === 'application/pdf' || str_starts_with($mimeType, 'image/')) {
+                        $fileContent = file_get_contents($fullPath);
+                        if ($fileContent === false) {
+                            Log::error('Failed to read file content for: ' . $fullPath);
+                            continue;
+                        }
+                        $base64Content = base64_encode($fileContent);
+                        
+                        Log::info('File exists: ' . $fullPath . ', MIME Type: ' . $mimeType . ', Base64 content length: ' . strlen($base64Content));
 
-                    $parts[] = [
-                        'inline_data' => [
-                            'mime_type' => $mimeType,
-                            'data' => $base64Content
-                        ]
-                    ];
+                        $parts[] = [
+                            'inline_data' => [
+                                'mime_type' => $mimeType,
+                                'data' => $base64Content
+                            ]
+                        ];
+                    } 
+                    // Procesar DOCX extrayendo texto
+                    elseif ($mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                        $extractedText = $this->getTextFromDocx($fullPath);
+                        if (!empty($extractedText)) {
+                            Log::info('Extracted text from DOCX: ' . $fullPath);
+                            $parts[] = [
+                                'text' => "\n\n--- Contenido extraído del documento adjunto (" . basename($path) . ") ---\n" . $extractedText
+                            ];
+                        } else {
+                            Log::warning('No text extracted from DOCX or empty: ' . $fullPath);
+                        }
+                    }
+                    else {
+                        Log::warning('Archivo adjunto con tipo MIME no soportado directamente: ' . $mimeType . ' - ' . $fullPath);
+                    }
                 } else {
                     Log::warning('Archivo adjunto no encontrado: ' . $fullPath);
                 }
@@ -319,6 +338,22 @@ class PrediccionController extends Controller
                 'error' => 'Error en el análisis con IA: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function getTextFromDocx($filePath)
+    {
+        $content = '';
+        $zip = new \ZipArchive;
+        if ($zip->open($filePath) === TRUE) {
+            if (($index = $zip->locateName('word/document.xml')) !== false) {
+                $xmlData = $zip->getFromIndex($index);
+                // Reemplazar cierres de párrafo con saltos de línea para mantener estructura básica
+                $xmlData = str_replace('</w:p>', "\n", $xmlData);
+                $content = strip_tags($xmlData);
+            }
+            $zip->close();
+        }
+        return $content;
     }
 
     private function buildGeminiPrompt($data, $paciente, $embarazos, $prediccionResultado = null, $attachmentPaths = [])
