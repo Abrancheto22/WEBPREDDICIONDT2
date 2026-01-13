@@ -28,11 +28,18 @@ class IndexController extends Controller
 
         // Obtener registros filtrados por año/mes (si aplica) para KPIs
         $kpiQuery = \App\Models\Prediccion::query()
-            ->whereNotNull('timer_parada')
-            ->whereYear('timer_parada', $selectedYear);
+            ->whereNotNull('timer_parada');
 
-        if ($selectedMonth) {
-            $kpiQuery->whereMonth('timer_parada', $selectedMonth);
+        if (config('database.default') === 'pgsql') {
+            $kpiQuery->whereRaw("EXTRACT(YEAR FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedYear]);
+            if ($selectedMonth) {
+                $kpiQuery->whereRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedMonth]);
+            }
+        } else {
+            $kpiQuery->whereYear('timer_parada', $selectedYear);
+            if ($selectedMonth) {
+                $kpiQuery->whereMonth('timer_parada', $selectedMonth);
+            }
         }
 
         $predicciones = $kpiQuery->get(['timer']);
@@ -65,33 +72,55 @@ class IndexController extends Controller
 
         $query = \App\Models\Prediccion::query()
             ->whereNotNull('timer_parada')
-            ->where('resultado', '>=', 0.5)
-            ->whereYear('timer_parada', $selectedYear);
+            ->where('resultado', '>=', 0.5);
 
-        if ($selectedMonth) {
-            $query->whereMonth('timer_parada', $selectedMonth);
+        if (config('database.default') === 'pgsql') {
+            $query->whereRaw("EXTRACT(YEAR FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedYear]);
+            if ($selectedMonth) {
+                $query->whereRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedMonth]);
+            }
+            $trendQuery = $query
+                ->selectRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) as m, COUNT(*) as c")
+                ->groupByRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP))")
+                ->orderByRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP))")
+                ->get();
+        } else {
+            $query->whereYear('timer_parada', $selectedYear);
+            if ($selectedMonth) {
+                $query->whereMonth('timer_parada', $selectedMonth);
+            }
+            $trendQuery = $query
+                ->selectRaw('MONTH(timer_parada) as m, COUNT(*) as c')
+                ->groupByRaw('MONTH(timer_parada)')
+                ->orderByRaw('MONTH(timer_parada)')
+                ->get();
         }
-
-        $trendQuery = $query
-            ->selectRaw('MONTH(timer_parada) as m, COUNT(*) as c')
-            ->groupByRaw('MONTH(timer_parada)')
-            ->orderByRaw('MONTH(timer_parada)')
-            ->get();
 
         $queryNeg = \App\Models\Prediccion::query()
             ->whereNotNull('timer_parada')
-            ->where('resultado', '<', 0.5)
-            ->whereYear('timer_parada', $selectedYear);
+            ->where('resultado', '<', 0.5);
 
-        if ($selectedMonth) {
-            $queryNeg->whereMonth('timer_parada', $selectedMonth);
+        if (config('database.default') === 'pgsql') {
+            $queryNeg->whereRaw("EXTRACT(YEAR FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedYear]);
+            if ($selectedMonth) {
+                $queryNeg->whereRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedMonth]);
+            }
+            $trendQueryNeg = $queryNeg
+                ->selectRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) as m, COUNT(*) as c")
+                ->groupByRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP))")
+                ->orderByRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP))")
+                ->get();
+        } else {
+            $queryNeg->whereYear('timer_parada', $selectedYear);
+            if ($selectedMonth) {
+                $queryNeg->whereMonth('timer_parada', $selectedMonth);
+            }
+            $trendQueryNeg = $queryNeg
+                ->selectRaw('MONTH(timer_parada) as m, COUNT(*) as c')
+                ->groupByRaw('MONTH(timer_parada)')
+                ->orderByRaw('MONTH(timer_parada)')
+                ->get();
         }
-
-        $trendQueryNeg = $queryNeg
-            ->selectRaw('MONTH(timer_parada) as m, COUNT(*) as c')
-            ->groupByRaw('MONTH(timer_parada)')
-            ->orderByRaw('MONTH(timer_parada)')
-            ->get();
 
         $monthNames = [
             1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
@@ -142,17 +171,31 @@ class IndexController extends Controller
             if ($doctor) {
                 $citas = Cita::where('iddoctor', $doctor->iddoctor)
                     ->whereHas('prediccion', function ($q) use ($selectedYear, $selectedMonth) {
-                        $q->whereNotNull('timer_parada')
-                          ->whereYear('timer_parada', $selectedYear);
-                        if ($selectedMonth) {
-                            $q->whereMonth('timer_parada', $selectedMonth);
+                        $q->whereNotNull('timer_parada');
+                        if (config('database.default') === 'pgsql') {
+                            $q->whereRaw("EXTRACT(YEAR FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedYear]);
+                            if ($selectedMonth) {
+                                $q->whereRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedMonth]);
+                            }
+                        } else {
+                            $q->whereYear('timer_parada', $selectedYear);
+                            if ($selectedMonth) {
+                                $q->whereMonth('timer_parada', $selectedMonth);
+                            }
                         }
                     })
                     ->with(['prediccion' => function ($q) use ($selectedYear, $selectedMonth) {
-                        $q->whereNotNull('timer_parada')
-                          ->whereYear('timer_parada', $selectedYear);
-                        if ($selectedMonth) {
-                            $q->whereMonth('timer_parada', $selectedMonth);
+                        $q->whereNotNull('timer_parada');
+                        if (config('database.default') === 'pgsql') {
+                            $q->whereRaw("EXTRACT(YEAR FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedYear]);
+                            if ($selectedMonth) {
+                                $q->whereRaw("EXTRACT(MONTH FROM CAST(timer_parada AS TIMESTAMP)) = ?", [$selectedMonth]);
+                            }
+                        } else {
+                            $q->whereYear('timer_parada', $selectedYear);
+                            if ($selectedMonth) {
+                                $q->whereMonth('timer_parada', $selectedMonth);
+                            }
                         }
                     }])
                     ->get();

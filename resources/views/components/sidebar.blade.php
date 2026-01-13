@@ -71,8 +71,6 @@
 
           <ul class="menu-inner py-1">
             <!-- Administración -->
-            <li class="menu-item">
-              <ul class="menu-inner py-1">
                 {{-- ADMINISTRADOR --}}
                 @if(Auth::user()->rol->idrol === 1)
                 <li class="menu-item">
@@ -180,9 +178,6 @@
                     </ul>
                 </li>
                 @endif
-            </ul>
-
-            </li>
           </ul>
         </aside>
         <!-- / Menu -->

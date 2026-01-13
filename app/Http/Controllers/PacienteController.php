@@ -10,18 +10,29 @@ use Illuminate\Support\Facades\Auth;
 
 class PacienteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $pacientes = Paciente::with('usuario')
-            ->get()
-            ->map(function ($paciente) {
-                if ($paciente->imagen && Storage::disk('public')->exists($paciente->imagen)) {
-                    $paciente->imagen_url = asset('storage/' . $paciente->imagen);
-                } else {
-                    $paciente->imagen_url = null;
-                }
-                return $paciente;
+        $user = Auth::user();
+        $role = (int) ($user->idrol ?? 0);
+
+        // Si es paciente, redirigir al panel personal
+        if ($role === 4) {
+            return redirect()->route('pacientes.panel');
+        }
+
+        $query = Paciente::with('usuario');
+
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'ilike', "%{$search}%")
+                  ->orWhere('apellido', 'ilike', "%{$search}%")
+                  ->orWhere('DNI', 'ilike', "%{$search}%");
             });
+        }
+
+        // Optimización: Paginación y eliminación de verificación de disco por registro
+        $pacientes = $query->orderBy('apellido')->paginate(10);
         
         return view('pacientes.index', compact('pacientes'));
     }
@@ -198,7 +209,7 @@ class PacienteController extends Controller
 
         if ($isPaciente) {
             // Obtener el paciente asociado al usuario autenticado usando la relación
-            $paciente = $user->paciente()
+            $paciente = Paciente::where('iduser', $user->id)
                 ->with(['citas.triaje', 'citas.prediccion', 'citas.doctor.usuario'])
                 ->first();
 
@@ -221,7 +232,12 @@ class PacienteController extends Controller
             }
         }
 
-        $citas = $paciente ? $paciente->citas()->with(['triaje', 'prediccion', 'doctor.usuario'])->orderByDesc('fecha_cita')->get() : collect();
+        // Optimización: Limitar el historial de citas para evitar sobrecarga
+        $citas = $paciente ? $paciente->citas()
+            ->with(['triaje', 'prediccion', 'doctor.usuario'])
+            ->orderByDesc('fecha_cita')
+            ->take(50) // Limitar a las últimas 50 citas
+            ->get() : collect();
 
         return view('pacientes.panel', [
             'pacientes' => $pacientesList,

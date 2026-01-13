@@ -29,6 +29,7 @@ class PrediccionController extends Controller
     public function create($idcita = null)
 {
     if ($idcita) {
+        
         $cita = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->find($idcita);
         if (! $cita) {
             return redirect()->back()->with('error', 'Cita no encontrada');
@@ -38,6 +39,9 @@ class PrediccionController extends Controller
         }
     }
     $citas = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->get();
+
+
+
 
     // Capturar el tiempo actual del servidor
     $startTime = now()->toIso8601String();
@@ -567,7 +571,7 @@ class PrediccionController extends Controller
             $startTime = now();
             Session::put('prediccion_start_time', $startTime);
 
-            $mlApiUrl = 'http://127.0.0.1:5000/predict';
+            $mlApiUrl = env('ML_API_URL', 'https://appml-tesis.vercel.app/predict');
 
             $response = Http::post($mlApiUrl, [
                 'Pregnancies' => (float)$validated['embarazos'],

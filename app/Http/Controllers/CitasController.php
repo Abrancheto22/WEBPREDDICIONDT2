@@ -8,39 +8,45 @@ use App\Models\Paciente;
 use App\Models\Doctor;
 use App\Models\Enfermera;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 
 class CitasController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $citas = Cita::with(['paciente', 'doctor', 'enfermera'])
-            ->get()
-            ->map(function ($cita) {
-                return $cita
-                    ->setAttribute('paciente_nombre', $cita->paciente ? $cita->paciente->nombre : 'N/A')
-                    ->setAttribute('paciente_apellido', $cita->paciente ? $cita->paciente->apellido : 'N/A')
-                    ->setAttribute('doctor_nombre', $cita->doctor ? $cita->doctor->nombre : 'N/A')
-                    ->setAttribute('doctor_apellido', $cita->doctor ? $cita->doctor->apellido : 'N/A')
-                    ->setAttribute('enfermera_nombre', $cita->enfermera ? $cita->enfermera->nombre : 'N/A')
-                    ->setAttribute('enfermera_apellido', $cita->enfermera ? $cita->enfermera->apellido : 'N/A');
+        $query = Cita::with(['paciente', 'doctor', 'enfermera']);
+
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->whereHas('paciente', function($q) use ($search) {
+                $q->where('nombre', 'ilike', "%{$search}%")
+                  ->orWhere('apellido', 'ilike', "%{$search}%")
+                  ->orWhere('DNI', 'ilike', "%{$search}%");
             });
+        }
+
+        // Optimización: Paginación y ordenamiento por fecha descendente
+        $citas = $query->orderBy('fecha_cita', 'desc')
+            ->orderBy('hora_cita', 'desc')
+            ->paginate(10);
         
         return view('citas.index', compact('citas'));
     }
 
     public function create()
     {
-        $pacientes = Paciente::all();
-        $doctores = Doctor::all();
-        $enfermeras = Enfermera::all();
+        // Optimización: Seleccionar solo campos necesarios
+        $pacientes = Paciente::orderBy('apellido')->get(['idpaciente', 'nombre', 'apellido', 'DNI']);
+        $doctores = Doctor::orderBy('apellido')->get(['iddoctor', 'nombre', 'apellido', 'especialidad']);
+        $enfermeras = Enfermera::orderBy('apellido')->get(['idenfermera', 'nombre', 'apellido']);
         
         // Obtener el ID de la enfermera si el usuario es enfermera
         $enfermera_id = null;
-        $user = auth()->user();
+        $user = Auth::user();
         
-        // Verificar si el usuario tiene rol de enfermera
-        if ($user->rol && $user->rol->nombre === 'enfermera') {
+        // Verificar si el usuario tiene rol de enfermera (validando que user no sea null)
+        if ($user && $user->rol && $user->rol->nombre === 'enfermera') {
             $enfermera_id = $user->enfermera ? $user->enfermera->idenfermera : null;
         }
 

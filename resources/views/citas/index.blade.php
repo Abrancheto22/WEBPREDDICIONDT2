@@ -60,27 +60,11 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="card-footer clearfix">
+                    {{ $citas->links() }}
+                </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const input = document.getElementById('search-citas');
-  const table = document.getElementById('table-citas');
-  if (!input || !table) return;
-  const rows = Array.from(table.querySelectorAll('tbody tr'));
-  function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-  input.addEventListener('input', function () {
-    const q = normalize(this.value);
-    rows.forEach(tr => {
-      const text = normalize(tr.innerText);
-      tr.style.display = text.includes(q) ? '' : 'none';
-    });
-  });
-});
-</script>
-@endpush

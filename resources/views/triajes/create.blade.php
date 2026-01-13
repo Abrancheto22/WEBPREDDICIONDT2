@@ -57,10 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <option value="">Seleccione una cita</option>
                                         @foreach($citas as $cita)
                                             <option value="{{ $cita->idcita }}">
-                                                {{ $cita->paciente->nombre }} - 
+                                                {{ optional($cita->paciente)->nombre ?? 'Paciente Desconocido' }} {{ optional($cita->paciente)->apellido ?? '' }} - 
                                                 {{ \Carbon\Carbon::parse($cita->fecha_cita)->format('d/m/Y') }} - 
                                                 {{ \Carbon\Carbon::parse($cita->hora_cita)->format('H:i') }}
-                                                @if(Triaje::where('idcita', $cita->idcita)->exists())
+                                                @if(App\Models\Triaje::where('idcita', $cita->idcita)->exists())
                                                     <span class="text-muted">(Ya tiene triaje)</span>
                                                 @endif
                                             </option>

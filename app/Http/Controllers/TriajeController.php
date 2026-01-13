@@ -20,9 +20,11 @@ class TriajeController extends Controller
 
     public function create()
     {
-        $citas = Cita::where('estado', 'pendiente')
+        // Buscar citas pendientes ignorando mayúsculas/minúsculas y espacios
+        $citas = Cita::whereRaw("TRIM(LOWER(estado)) = 'pendiente'")
             ->with(['paciente', 'doctor', 'enfermera'])
             ->get();
+            
         return view('triajes.create', compact('citas'));
     }
 
@@ -67,7 +69,7 @@ class TriajeController extends Controller
     public function edit($id)
     {
         $triaje = Triaje::with('cita')->findOrFail($id);
-        $citas = Cita::where('estado', 'pendiente')->get();
+        $citas = Cita::where('estado', 'Pendiente')->get();
         return view('triajes.edit', compact('triaje', 'citas'));
     }
 

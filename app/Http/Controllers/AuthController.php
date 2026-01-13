@@ -31,14 +31,26 @@ class AuthController extends BaseController
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $validatedData['name'],
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
             'idrol' => 4, // Asignamos automáticamente el rol de paciente
         ]);
 
-        return redirect()->route('login')->with('success', 'Registration successful! Please login.');
+        // Crear el perfil de paciente automáticamente
+        \App\Models\Paciente::create([
+            'nombre' => $validatedData['name'],
+            'apellido' => 'Por actualizar', // Valor temporal
+            'DNI' => 'TEMP' . time(), // Valor temporal único
+            'sexo' => 'M', // Valor por defecto
+            'fecha_nacimiento' => now(), // Valor por defecto
+            'direccion' => 'Por actualizar',
+            'iduser' => $user->id,
+            'imagen' => 'plantilla/assets/img/avatars/default.webp'
+        ]);
+
+        return redirect()->route('login')->with('success', 'Registro exitoso. Por favor, inicie sesión.');
     }
 
     public function login(Request $request)
@@ -56,6 +68,17 @@ class AuthController extends BaseController
             if (Hash::check($credentials['password'], $user->password)) {
                 Auth::login($user);
                 $request->session()->regenerate();
+
+                // Redirección basada en rol
+                if ($user->idrol === 4) { // Paciente
+                    // Si el paciente tiene datos temporales, redirigir a editar perfil
+                    if ($user->paciente && $user->paciente->DNI && str_starts_with($user->paciente->DNI, 'TEMP')) {
+                        return redirect()->route('pacientes.edit', $user->paciente->idpaciente)
+                            ->with('info', 'Por favor, complete sus datos personales para continuar.');
+                    }
+                    return redirect()->route('pacientes.panel');
+                }
+
                 return redirect()->route('dashboard');
             }
         }
