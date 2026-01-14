@@ -82,13 +82,19 @@ Route::middleware(['auth'])->group(function () {
     /*Rutas de pacientes*/
     // Definir rutas fijas ANTES del resource para evitar colisiones con /pacientes/{id}
     Route::get('/pacientes/panel', [PacienteController::class, 'panel'])->name('pacientes.panel');
-    Route::resource('pacientes', PacienteController::class);
-    Route::get('/pacientes/{idpaciente}', [PacienteController::class, 'show'])->name('pacientes.show');
+    
+    // Rutas manuales específicas
     Route::get('/pacientes/create', [PacienteController::class, 'create'])->name('pacientes.create');
     Route::post('/pacientes', [PacienteController::class, 'store'])->name('pacientes.store');
     Route::get('/pacientes/{id}/edit', [PacienteController::class, 'edit'])->name('pacientes.edit');
     Route::put('/pacientes/{idpaciente}', [PacienteController::class, 'update'])->name('pacientes.update');
     Route::delete('/pacientes/{idpaciente}', [PacienteController::class, 'destroy'])->name('pacientes.destroy');
+    
+    // Resource route con excepciones para evitar duplicados
+    Route::resource('pacientes', PacienteController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+    
+    // Ruta manual que causaba conflicto (ya manejada por resource o eliminada si es redundante)
+    // Route::get('/pacientes/{idpaciente}', [PacienteController::class, 'show'])->name('pacientes.show');
 
     /*Rutas de citas*/
     Route::get('/citas', [CitasController::class, 'index'])->name('citas.index');
