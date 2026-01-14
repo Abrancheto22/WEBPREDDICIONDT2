@@ -48,13 +48,27 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/doctores/costos', [DoctorController::class, 'costos'])->name('doctores.costos');
     Route::get('/doctores/costos/export', [DoctorController::class, 'exportCostos'])->name('doctores.costos.export');
     Route::get('/doctores/costos/confusion/export', [DoctorController::class, 'exportConfusion'])->name('doctores.costos.confusion.export');
-    Route::resource('doctores', DoctorController::class);
-    Route::get('/doctores/{iddoctor}', [DoctorController::class, 'show'])->name('doctores.show');
+    
+    // Rutas específicas ANTES del resource
     Route::get('/doctores/create', [DoctorController::class, 'create'])->name('doctores.create');
     Route::post('/doctores', [DoctorController::class, 'store'])->name('doctores.store');
     Route::get('/doctores/{id}/edit', [DoctorController::class, 'edit'])->name('doctores.edit');
     Route::put('/doctores/{idrol}', [DoctorController::class, 'update'])->name('doctores.update');
     Route::delete('/doctores/{id}', [DoctorController::class, 'destroy'])->name('doctores.destroy');
+    
+    // Resource route (maneja automáticamente show, index, etc.)
+    // NOTA: Como ya definiste create, store, edit, update, destroy manualmente arriba,
+    // el resource podría duplicar rutas si no tienes cuidado.
+    // La mejor práctica es usar `except` para las que ya definiste o dejar solo resource.
+    // Dado que tienes rutas personalizadas con parámetros específicos (idrol, id),
+    // mantendremos las manuales y dejaremos el resource SOLO para index y show genérico si hace falta,
+    // pero el error es que resource crea 'doctores.show' y tú tenías otra ruta manual 'doctores.show'.
+    
+    Route::resource('doctores', DoctorController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+    
+    // La ruta manual que causaba conflicto:
+    // Route::get('/doctores/{iddoctor}', [DoctorController::class, 'show'])->name('doctores.show');
+    // Ya no es necesaria porque resource la genera, o si quieres usar la manual, no uses resource.
 
     /*Rutas de enfermeras*/
     Route::get('/enfermeras/create', [EnfermeraController::class, 'create'])->name('enfermeras.create');
