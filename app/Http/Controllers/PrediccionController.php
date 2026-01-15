@@ -251,19 +251,27 @@ class PrediccionController extends Controller
                 $geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
             }
 
-            // Limpieza crítica: eliminar espacios en blanco accidentales (común al copiar/pegar en .env)
+            // Limpieza crítica: eliminar espacios en blanco accidentales
             $geminiApiKey = trim((string)$geminiApiKey);
             $geminiUrl = trim((string)$geminiUrl);
 
-            Log::info('Calling Gemini API with URL: ' . $geminiUrl);
+            // VERIFICACIÓN EXPLÍCITA DE LA KEY
+            if (empty($geminiApiKey)) {
+                Log::error('INTENTO DE LLAMADA A GEMINI SIN API KEY');
+                throw new \Exception('La API Key de Gemini está vacía. Configure GEMINI_API_KEY en el .env y ejecute "php artisan config:cache"');
+            }
 
-            // Asegurar que la URL termine correctamente y añadir la key como query param
-            // Esto es más robusto para la API de generativelanguage.googleapis.com
+            // Construcción de la URL con la Key
             $urlWithKey = $geminiUrl;
-            if (strpos($urlWithKey, '?key=') === false) {
+            // Si la URL no tiene ?key=, se lo agregamos.
+            if (strpos($urlWithKey, 'key=') === false) {
                 $separator = strpos($urlWithKey, '?') === false ? '?' : '&';
                 $urlWithKey .= $separator . 'key=' . $geminiApiKey;
             }
+
+            // Log de depuración (Ocultando parte de la key por seguridad)
+            $maskedKey = substr($geminiApiKey, 0, 4) . '...' . substr($geminiApiKey, -4);
+            Log::info("Intentando conectar a Gemini. URL Base: {$geminiUrl} | Key detectada: {$maskedKey}");
 
             // Validación final de URL antes de enviar
             if (!filter_var($urlWithKey, FILTER_VALIDATE_URL)) {
@@ -271,10 +279,9 @@ class PrediccionController extends Controller
                 throw new \Exception('La URL de la API de Gemini no tiene un formato válido. Verifique el archivo .env en el servidor.');
             }
 
+            // Llamada HTTP limpia (usando solo URL params para la auth, como prefiere Google en llamadas simples)
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-                // Mantenemos el header por compatibilidad, aunque el query param suele ser prioritario
-                'X-goog-api-key' => $geminiApiKey,
             ])->timeout(120)->post($urlWithKey, [
                 'contents' => [
                     [
