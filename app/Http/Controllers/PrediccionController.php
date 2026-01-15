@@ -242,9 +242,9 @@ class PrediccionController extends Controller
             Log::info('Parts array before sending to Gemini: ' . json_encode($parts));
 
             // Llamar a la API de Gemini
-            $geminiApiKey = env('GEMINI_API_KEY');
-            // Usar una URL por defecto si no está definida en el .env
-            $geminiUrl = env('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent');
+            // IMPORTANTE: Usar config() en lugar de env() porque en producción con caché env() devuelve null
+            $geminiApiKey = config('services.gemini.api_key');
+            $geminiUrl = config('services.gemini.api_url');
 
             Log::info('Calling Gemini API with URL: ' . $geminiUrl);
 
