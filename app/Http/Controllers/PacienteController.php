@@ -223,7 +223,7 @@ class PacienteController extends Controller
             }
         } elseif ($isAdminOrEnfermera) {
             // Cargar lista para selector
-            $pacientesList = Paciente::orderBy('apellido')->orderBy('nombre')->get(['idpaciente','nombre','apellido','DNI']);
+            $pacientesList = Paciente::orderBy('apellido')->orderBy('nombre')->get();
 
             $selectedId = $request->input('idpaciente');
             if ($selectedId) {
