@@ -63,7 +63,11 @@
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <a href="{{ route('predicciones.create', ['idcita' => $cita->idcita]) }}" class="btn btn-sm btn-info">Consulta</a>
+                                    @if($cita->tiene_triaje)
+                                        <a href="{{ route('predicciones.create', ['idcita' => $cita->idcita]) }}" class="btn btn-sm btn-info">Consulta</a>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-secondary" disabled title="Requiere Triaje previo">Sin Triaje</button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
