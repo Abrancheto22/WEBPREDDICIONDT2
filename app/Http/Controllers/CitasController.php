@@ -36,10 +36,10 @@ class CitasController extends Controller
 
     public function create()
     {
-        // Optimización: Seleccionar solo campos necesarios
-        $pacientes = Paciente::orderBy('apellido')->get(['idpaciente', 'nombre', 'apellido', 'DNI']);
-        $doctores = Doctor::orderBy('apellido')->get(['iddoctor', 'nombre', 'apellido', 'especialidad']);
-        $enfermeras = Enfermera::orderBy('apellido')->get(['idenfermera', 'nombre', 'apellido']);
+        // Se revierte la optimización temporalmente para descartar errores de nombres de columna
+        $pacientes = Paciente::orderBy('apellido')->get();
+        $doctores = Doctor::orderBy('apellido')->get();
+        $enfermeras = Enfermera::orderBy('apellido')->get();
         
         // Obtener el ID de la enfermera si el usuario es enfermera
         $enfermera_id = null;
