@@ -246,6 +246,15 @@ class PrediccionController extends Controller
             $geminiApiKey = config('services.gemini.api_key');
             $geminiUrl = config('services.gemini.api_url');
 
+            // Fallback de seguridad: Si la URL está vacía o no se cargó, usar la predeterminada
+            if (empty($geminiUrl)) {
+                $geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+            }
+
+            // Limpieza crítica: eliminar espacios en blanco accidentales (común al copiar/pegar en .env)
+            $geminiApiKey = trim((string)$geminiApiKey);
+            $geminiUrl = trim((string)$geminiUrl);
+
             Log::info('Calling Gemini API with URL: ' . $geminiUrl);
 
             // Asegurar que la URL termine correctamente y añadir la key como query param
@@ -254,6 +263,12 @@ class PrediccionController extends Controller
             if (strpos($urlWithKey, '?key=') === false) {
                 $separator = strpos($urlWithKey, '?') === false ? '?' : '&';
                 $urlWithKey .= $separator . 'key=' . $geminiApiKey;
+            }
+
+            // Validación final de URL antes de enviar
+            if (!filter_var($urlWithKey, FILTER_VALIDATE_URL)) {
+                Log::error('URL de Gemini malformada detectada: ' . $urlWithKey);
+                throw new \Exception('La URL de la API de Gemini no tiene un formato válido. Verifique el archivo .env en el servidor.');
             }
 
             $response = Http::withHeaders([
