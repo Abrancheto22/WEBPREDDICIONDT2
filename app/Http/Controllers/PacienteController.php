@@ -129,7 +129,7 @@ class PacienteController extends Controller
         $paciente = Paciente::findOrFail($idpaciente);
 
         $request->validate([
-            'DNI' => 'required|string|max:20|unique:paciente,DNI,' . $idpaciente . ',idpaciente',
+            'DNI' => 'required|string|max:20|unique:paciente,dni,' . $idpaciente . ',idpaciente',
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'sexo' => 'required|in:M,F',
@@ -140,7 +140,7 @@ class PacienteController extends Controller
             'iduser' => 'required|exists:users,id|unique:paciente,iduser,' . $idpaciente . ',idpaciente',
         ]);
 
-        $paciente->DNI = $request->DNI;
+        $paciente->dni = $request->DNI;
         $paciente->nombre = $request->nombre;
         $paciente->apellido = $request->apellido;
         $paciente->sexo = $request->sexo;

@@ -38,25 +38,12 @@
                             @foreach($pacientes as $paciente)
                             <tr>
                                 <td>{{ $paciente->idpaciente }}</td>
-                                <td>{{ $paciente->DNI }}</td>
-                                <td>{{ $paciente->nombre }} {{ $paciente->apellido }}</td>
+                                <td>{{ $paciente->apellido }}, {{ $paciente->nombre }}</td>
                                 <td>{{ $paciente->telefono }}</td>
                                 <td>{{ $paciente->sexo }}</td>
                                 <td>{{ $paciente->fecha_nacimiento }}</td>
-                                <td>
-                                    @if ($paciente->imagen)
-                                        <img src="{{ asset($paciente->imagen) }}" alt="Imagen del paciente" class="img-fluid" style="max-width: 100px;">
-                                    @else
-                                        <span class="text-muted">No hay imagen</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if ($paciente->usuario)
-                                        {{ $paciente->usuario->name }}
-                                    @else
-                                        <span class="text-muted">No asignado</span>
-                                    @endif
-                                </td>
+                                <td>{{ $paciente->dni ?? $paciente->DNI }}</td>
+                                <td>{{ optional($paciente->usuario)->name ?? 'N/A' }}</td>
                                 <td>
                                     <div class="btn-group">
                                         <a href="{{ route('pacientes.show', $paciente->idpaciente) }}" class="btn btn-sm btn-info">

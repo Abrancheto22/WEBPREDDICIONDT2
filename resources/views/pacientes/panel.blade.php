@@ -16,7 +16,7 @@
                 <option value="">-- Elegir --</option>
                 @foreach($pacientes as $p)
                   <option value="{{ $p->idpaciente }}" {{ (optional($selectedPaciente)->idpaciente ?? '') == $p->idpaciente ? 'selected' : '' }}>
-                    {{ $p->apellido }}, {{ $p->nombre }} (DNI: {{ $p->DNI }})
+                    {{ $p->apellido }}, {{ $p->nombre }} (DNI: {{ $p->dni ?? $p->DNI }})
                   </option>
                 @endforeach
               </select>
