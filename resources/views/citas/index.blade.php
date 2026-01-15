@@ -35,7 +35,7 @@
                                 <td>{{ $cita->idcita }}</td>
                                 <td>{{ $cita->fecha_cita }}</td>
                                 <td>{{ \Carbon\Carbon::parse($cita->hora_cita)->format('H:i') }}</td>
-                                <td>{{ $cita->paciente_nombre }} {{ $cita->paciente_apellido }}</td>
+                                <td>{{ optional($cita->paciente)->nombre ?? 'N/A' }} {{ optional($cita->paciente)->apellido ?? '' }}</td>
                                 <td>{{ \Illuminate\Support\Str::limit($cita->motivo, 30) }}</td>
                                 <td>{{ $cita->estado }}</td>
                                 <td>
