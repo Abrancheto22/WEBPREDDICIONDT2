@@ -28,7 +28,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">DNI</label>
-                            <p class="mb-0">{{ $paciente->DNI }}</p>
+                            <p class="mb-0">{{ $paciente->dni ?? $paciente->DNI }}</p>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Fecha de Nacimiento</label>
