@@ -38,11 +38,18 @@
                             @foreach($pacientes as $paciente)
                             <tr>
                                 <td>{{ $paciente->idpaciente }}</td>
+                                <td>{{ $paciente->dni ?? $paciente->DNI }}</td>
                                 <td>{{ $paciente->apellido }}, {{ $paciente->nombre }}</td>
                                 <td>{{ $paciente->telefono }}</td>
                                 <td>{{ $paciente->sexo }}</td>
                                 <td>{{ $paciente->fecha_nacimiento }}</td>
-                                <td>{{ $paciente->dni ?? $paciente->DNI }}</td>
+                                <td>
+                                    @if ($paciente->imagen)
+                                        <img src="{{ asset($paciente->imagen) }}" alt="Imagen" class="rounded-circle" width="30" height="30">
+                                    @else
+                                        <span class="badge bg-secondary">N/A</span>
+                                    @endif
+                                </td>
                                 <td>{{ optional($paciente->usuario)->name ?? 'N/A' }}</td>
                                 <td>
                                     <div class="btn-group">
