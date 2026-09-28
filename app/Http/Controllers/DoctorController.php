@@ -206,10 +206,12 @@ class DoctorController extends Controller
             ];
         }
 
-        // Calcular matriz de confusión global (umbral 0.35)
+        // Calcular matriz de confusión global (umbral 0.55 acorde al Instrumento 3)
         $TP = 0; $TN = 0; $FP = 0; $FN = 0;
-        $threshold = 0.35;
-        $predicciones = Prediccion::select('resultado', 'validar_prediccion')->get();
+        $threshold = 0.55;
+        $predicciones = Prediccion::whereHas('cita', function ($q) {
+            $q->whereBetween('idpaciente', [1, 80]);
+        })->select('resultado', 'validar_prediccion')->get();
         foreach ($predicciones as $p) {
             if ($p->validar_prediccion === null) { continue; }
             $predictedPositive = ((float)$p->resultado) > $threshold;
@@ -249,7 +251,7 @@ class DoctorController extends Controller
 
     public function exportConfusion(Request $request)
     {
-        $threshold = (float) ($request->get('threshold', 0.35));
+        $threshold = (float) ($request->get('threshold', 0.55));
         return Excel::download(new \App\Exports\ConfusionMatrixExport($threshold), 'matriz_confusion.xlsx');
     }
 }

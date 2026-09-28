@@ -10,7 +10,7 @@ class ConfusionMatrixExport implements FromArray, WithHeadings
 {
     protected float $threshold;
 
-    public function __construct(float $threshold = 0.35)
+    public function __construct(float $threshold = 0.55)
     {
         $this->threshold = $threshold;
     }
@@ -23,7 +23,9 @@ class ConfusionMatrixExport implements FromArray, WithHeadings
     public function array(): array
     {
         $TP = 0; $TN = 0; $FP = 0; $FN = 0;
-        $predicciones = Prediccion::select('resultado', 'validar_prediccion')->get();
+        $predicciones = Prediccion::whereHas('cita', function ($q) {
+            $q->whereBetween('idpaciente', [1, 80]);
+        })->select('resultado', 'validar_prediccion')->get();
         foreach ($predicciones as $p) {
             if ($p->validar_prediccion === null) { continue; }
             $predictedPositive = ((float)$p->resultado) > $this->threshold;
