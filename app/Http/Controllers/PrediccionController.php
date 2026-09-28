@@ -137,6 +137,7 @@ class PrediccionController extends Controller
     
     public function analyzeWithGemini(Request $request)
     {
+        set_time_limit(120);
         try {
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
@@ -414,7 +415,7 @@ class PrediccionController extends Controller
             ? "\n**OBSERVACIONES MÉDICAS DEL PROFESIONAL:**\n{$data['observacion']}" 
             : "";
 
-        $prompt = "Eres un asistente médico experto en diabetes tipo 2. Analiza la siguiente información del paciente y los documentos adjuntos (si los hay) para proporcionar un análisis detallado, estratificación de riesgo, interpretación de resultados, recomendaciones y un plan terapéutico. Considera toda la información proporcionada, incluyendo los archivos adjuntos, para tu análisis.\n\n" .
+        $prompt = "Eres un asistente médico experto en diabetes tipo 2. Analiza la siguiente información del paciente y los documentos adjuntos (si los hay) para proporcionar un análisis detallado, estratificación de riesgo, interpretación de resultados, recomendaciones y un plan terapéutico integral. Considera toda la información clínica proporcionada para tu análisis.\n\n" .
             "**INFORMACIÓN DEL PACIENTE:**\n" .
             "- Nombre: {$paciente->nombre} {$paciente->apellido}\n" .
             "- Sexo: {$paciente->sexo}\n" .
@@ -427,7 +428,11 @@ class PrediccionController extends Controller
             "- IMC: {$data['BMI']}\n" .
             "- Función Pedigree de Diabetes: {$data['pedigree']}\n" .
             $observacionesInfo .
-            $prediccionInfo;
+            "\n\n**REGLAS DE FORMATO:**\n" .
+            "- NO uses símbolos ni fórmulas en formato LaTeX (NUNCA uses signos de dólar '$', ni '\\ge', '\\le', '\\text{}', '\\mu').\n" .
+            "- Usa siempre símbolos médicos y numéricos limpios: '≥', '≤', '>', '<', 'µU/ml', 'mg/dL', 'mmHg', 'kg/m²'.\n" .
+            "- Estructura tu respuesta directamente con los parámetros clínicos, interpretación, estratificación de riesgo y recomendaciones terapéuticas.\n" .
+            "- NO incluyas bajo ninguna circunstancia bloques ni secciones de advertencia clínica sobre discrepancias con predicciones ni críticas de algoritmos.";
 
         if (!empty($attachmentPaths)) {
             $prompt .= "\n\n**DOCUMENTOS ADJUNTOS:**\nSe han proporcionado documentos adicionales para el análisis. Por favor, revisa estos documentos cuidadosamente y utiliza la información contenida en ellos para enriquecer tu análisis y tus recomendaciones.\n\n**CONTENIDO DE LOS ARCHIVOS ADJUNTOS (TEMPORAL):**\nPor favor, lista brevemente el contenido principal de cada archivo adjunto para confirmar su lectura.";
@@ -824,79 +829,157 @@ class PrediccionController extends Controller
 
     private function formatAnalysisText($text)
     {
-        // Limpiar espacios en blanco excesivos al inicio y final
-        $text = trim($text);
-        
-        // Reemplazar múltiples saltos de línea consecutivos con máximo 1
-        $text = preg_replace('/\n{2,}/', "\n", $text);
-        
-        // Reemplazar **texto** con <strong>texto</strong>
-        $text = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $text);
+        // 1. Limpieza profunda de notación LaTeX y fórmulas matemáticas
+        $latexReplacements = [
+            '\\ge' => '≥',
+            '\\le' => '≤',
+            '\\geq' => '≥',
+            '\\leq' => '≤',
+            '\\mu' => 'µ',
+            '\\times' => '×',
+            '\\pm' => '±',
+            '\\text{kg/m}^2' => 'kg/m²',
+            '\\text{kg/m²}' => 'kg/m²',
+            'kg/m^2' => 'kg/m²',
+            'mg/dl' => 'mg/dL',
+            'mmhg' => 'mmHg',
+            'muU/ml' => 'µU/ml',
+        ];
+        $text = str_ireplace(array_keys($latexReplacements), array_values($latexReplacements), $text);
 
-         // Agregar iconos específicos a títulos y secciones importantes
-        $text = preg_replace('/<h3>(.*?ESTRATIFICACIÓN.*?)<\/h3>/i', '<h3>🎯 $1</h3>', $text);
-        $text = preg_replace('/<h3>(.*?INTERPRETACIÓN.*?)<\/h3>/i', '<h3>📊 $1</h3>', $text);
-        $text = preg_replace('/<h3>(.*?RECOMENDACIONES.*?)<\/h3>/i', '<h3>💡 $1</h3>', $text);
-        $text = preg_replace('/<h3>(.*?PLAN.*?TERAPÉUTICO.*?)<\/h3>/i', '<h3>🏥 $1</h3>', $text);
-        $text = preg_replace('/<h3>(.*?FACTORES.*?RIESGO.*?)<\/h3>/i', '<h3>⚠️ $1</h3>', $text);
-        $text = preg_replace('/<h3>(.*?CONSIDERACIONES.*?)<\/h3>/i', '<h3>📋 $1</h3>', $text);
-        
-        // Agregar iconos a subtítulos h4
-        $text = preg_replace('/<h4>(.*?Clasificación.*?)<\/h4>/i', '<h4>🔍 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Justificación.*?)<\/h4>/i', '<h4>📝 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Correlación.*?)<\/h4>/i', '<h4>🔗 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Análisis.*?)<\/h4>/i', '<h4>🧪 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Estudios.*?)<\/h4>/i', '<h4>🔬 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Periodicidad.*?)<\/h4>/i', '<h4>📅 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Criterios.*?)<\/h4>/i', '<h4>📏 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Intervenciones.*?)<\/h4>/i', '<h4>🎯 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Consideraciones.*?)<\/h4>/i', '<h4>💊 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Objetivos.*?)<\/h4>/i', '<h4>🎯 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Identificación.*?)<\/h4>/i', '<h4>🔍 $1</h4>', $text);
-        $text = preg_replace('/<h4>(.*?Estrategias.*?)<\/h4>/i', '<h4>📈 $1</h4>', $text);
-        
-        // Agregar iconos a términos médicos específicos
-        $text = str_replace(['HbA1c', 'Hemoglobina glicosilada'], ['🩸 HbA1c', '🩸 Hemoglobina glicosilada'], $text);
-        $text = str_replace(['PTOG', 'Prueba de tolerancia'], ['🥤 PTOG', '🥤 Prueba de tolerancia'], $text);
-        $text = str_replace(['glucosa', 'Glucosa'], ['🍯 glucosa', '🍯 Glucosa'], $text);
-        $text = str_replace(['insulina', 'Insulina'], ['💉 insulina', '💉 Insulina'], $text);
-        $text = str_replace(['presión arterial', 'Presión arterial'], ['❤️ presión arterial', '❤️ Presión arterial'], $text);
-        $text = str_replace(['BMI', 'IMC'], ['⚖️ BMI', '⚖️ IMC'], $text);
-        
-        // Agregar iconos a niveles de riesgo
-        $text = str_replace(['ALTO riesgo', 'Alto riesgo'], ['🔴 ALTO riesgo', '🔴 Alto riesgo'], $text);
-        $text = str_replace(['MODERADO riesgo', 'Moderado riesgo'], ['🟡 MODERADO riesgo', '🟡 Moderado riesgo'], $text);
-        $text = str_replace(['BAJO riesgo', 'Bajo riesgo'], ['🟢 BAJO riesgo', '🟢 Bajo riesgo'], $text);
-        
-        // Agregar iconos a recomendaciones comunes
-        $text = str_replace(['dieta', 'Dieta'], ['🥗 dieta', '🥗 Dieta'], $text);
-        $text = str_replace(['ejercicio', 'Ejercicio'], ['🏃‍♂️ ejercicio', '🏃‍♂️ Ejercicio'], $text);
-        $text = str_replace(['peso', 'Peso'], ['⚖️ peso', '⚖️ Peso'], $text);
-        $text = str_replace(['seguimiento', 'Seguimiento'], ['📋 seguimiento', '📋 Seguimiento'], $text);
-        $text = str_replace(['control', 'Control'], ['🎛️ control', '🎛️ Control'], $text);
+        // Limpiar \text{algo} -> algo
+        $text = preg_replace('/\\\\text\s*\{\s*([^{}]+)\s*\}/u', '$1', $text);
+        $text = preg_replace('/\\\\text\s*\{\s*\}/u', ' ', $text);
 
-        // Convertir listas con viñetas (*) en listas HTML
-        $text = preg_replace('/^\* (.*?)(\n|$)/m', '<li>$1</li>', $text);
-        if (strpos($text, '<li>') !== false) {
-            $text = '<ul>' . $text . '</ul>';
-            // Corregir el caso de <ul> anidado si se da por múltiples llamadas
-            $text = str_replace('</ul><ul>', '', $text);
+        // Limpiar llaves { } residuales de LaTeX
+        $text = str_replace(['{', '}'], '', $text);
+
+        // Eliminar $ alrededor de números, fórmulas o unidades ($...$)
+        $text = preg_replace('/\$([^$]+)\$/u', '$1', $text);
+        $text = str_replace('$', '', $text);
+
+        // 2. Normalizar saltos de línea (CRLF a LF)
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+
+        // 3. Filtrar y eliminar por completo secciones de advertencia clínica o críticas de predicción
+        $text = preg_replace('/^#{2,4}\s*.*(?:cr[ií]tica|discrepancia|observaci[oó]n m[eé]rita).*$/miu', '', $text);
+
+        // Eliminar bloques de cita (> ...) que contengan advertencias o discrepancias
+        $lines = explode("\n", $text);
+        $cleanLines = [];
+        $inDiscardQuote = false;
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if (str_starts_with($trimmed, '>')) {
+                if (stripos($trimmed, 'ADVERTENCIA') !== false || stripos($trimmed, 'discrepancia') !== false || $inDiscardQuote) {
+                    $inDiscardQuote = true;
+                    continue; // Descartar línea de advertencia
+                }
+            } else {
+                $inDiscardQuote = false;
+            }
+            $cleanLines[] = $line;
         }
+        $text = implode("\n", $cleanLines);
 
-        // Reemplazar saltos de línea con <br>
+        // Eliminar párrafos sueltos que empiecen con ¡ADVERTENCIA CLÍNICA! o ADVERTENCIA CLÍNICA
+        $text = preg_replace('/^[¡!]?\s*ADVERTENCIA\s+CL[IÍ]NICA[^\n]*(?:\n(?![#\*\•\-])[^\n]+)*/miu', '', $text);
+
+        // 4. Normalizar encabezados Markdown (## o ###)
+        // Soportar tanto "### Encabezado" como "###\nEncabezado"
+        $text = preg_replace('/^#{2,4}\s*\n\s*/m', '### ', $text);
+
+        $text = preg_replace_callback(
+            '/^#{2,4}\s+([^\n#]+)$/m',
+            function ($m) {
+                $title = trim($m[1]);
+                // Si el título contiene crítica o advertencia, no mostrarlo
+                if (stripos($title, 'crítica') !== false || stripos($title, 'discrepancia') !== false || stripos($title, 'advertencia') !== false) {
+                    return '';
+                }
+                $icon = 'fa-stethoscope';
+                if (stripos($title, 'parámetro') !== false || stripos($title, 'laboratorio') !== false) {
+                    $icon = 'fa-flask';
+                } elseif (stripos($title, 'recomend') !== false || stripos($title, 'plan') !== false || stripos($title, 'terap') !== false) {
+                    $icon = 'fa-pills';
+                } elseif (stripos($title, 'riesgo') !== false || stripos($title, 'estratific') !== false) {
+                    $icon = 'fa-chart-pie';
+                }
+                return '<div class="ai-section-title mt-4 mb-3 d-flex align-items-center"><span class="ai-section-icon me-2"><i class="fas ' . $icon . '"></i></span><h5 class="mb-0 fw-bold text-dark">' . $title . '</h5></div>';
+            },
+            $text
+        );
+
+        // 5. Convertir divisores --- o ***
+        $text = preg_replace('/^\s*[-*_]{3,}\s*$/m', '<hr class="ai-divider my-4">', $text);
+
+        // 6. Formatear negritas Markdown (**texto**)
+        $text = preg_replace('/\*\*(.*?)\*\*/su', '<strong>$1</strong>', $text);
+
+        // 7. Formatear interpretaciones indentadas (* *Interpretación:* ... o * Interpretación: ...)
+        $text = preg_replace_callback(
+            '/^\s*[\*\•\-]\s*(?:\*|<strong>)?\s*(Interpretaci[oó]n|Nota cl[ií]nica|Comentario|Significado)\s*:?(?:\*|<\/strong>)?\s*:?\s*(.*?)$/miu',
+            function ($m) {
+                $label = $m[1];
+                $body = $m[2];
+                return '<div class="ai-interpretation-box my-2 ms-4 p-2 ps-3 rounded-2 shadow-sm">' .
+                       '<small class="text-primary fw-bold text-uppercase d-block mb-1"><i class="fas fa-stethoscope me-1"></i>' . $label . ':</small>' .
+                       '<span class="text-secondary-emphasis small">' . $body . '</span>' .
+                       '</div>';
+            },
+            $text
+        );
+
+        // 8. Formatear viñetas de nivel superior (• o * o -)
+        $text = preg_replace_callback(
+            '/^\s*[\*\•\-]\s+(?!<div)(.*?)$/mu',
+            function ($m) {
+                $content = $m[1];
+                return '<li class="ai-list-item mb-2 ps-2">' . $content . '</li>';
+            },
+            $text
+        );
+
+        // Agrupar <li> contiguos en <ul class="ai-param-list">
+        $text = preg_replace('/((?:<li class="ai-list-item[^>]*>.*?<\/li>\s*)+)/su', '<ul class="ai-param-list list-unstyled ps-0 mb-3">$1</ul>', $text);
+
+        // 9. Badges de estado clínico para valores después de ':'
+        $text = preg_replace_callback(
+            '/:\s*(ELEVAD[AO](?:\s*\([^\)]+\))?|ANORMAL|ALTERAD[AO]|NORMAL|OPTIM[AO])/iu',
+            function ($matches) {
+                $val = mb_strtoupper(trim($matches[1]));
+                if (str_contains($val, 'ELEVAD') || str_contains($val, 'ANORMAL') || str_contains($val, 'ALTERAD')) {
+                    return ': <span class="badge bg-danger text-white px-2 py-1 shadow-sm"><i class="fas fa-arrow-trend-up me-1"></i>' . $matches[1] . '</span>';
+                } else {
+                    return ': <span class="badge bg-success text-white px-2 py-1 shadow-sm"><i class="fas fa-check me-1"></i>' . $matches[1] . '</span>';
+                }
+            },
+            $text
+        );
+
+        // Badges para categorías de riesgo en mayúsculas
+        $text = preg_replace_callback(
+            '/\b(ALTO RIESGO METABÓLICO Y CARDIOVASCULAR|ALTO RIESGO|MUY ALTO RIESGO|RIESGO MUY ALTO|RIESGO ALTO|RIESGO MODERADO|MODERADO RIESGO|RIESGO BAJO|BAJO RIESGO|RIESGO MUY BAJO)\b/u',
+            function ($matches) {
+                $val = mb_strtoupper(trim($matches[1]));
+                if (str_contains($val, 'ALTO')) {
+                    return '<span class="badge bg-danger text-white px-2 py-1 shadow-sm"><i class="fas fa-exclamation-triangle me-1"></i>' . $matches[1] . '</span>';
+                } elseif (str_contains($val, 'MODERADO')) {
+                    return '<span class="badge bg-warning text-dark px-2 py-1 shadow-sm"><i class="fas fa-exclamation me-1"></i>' . $matches[1] . '</span>';
+                } else {
+                    return '<span class="badge bg-success text-white px-2 py-1 shadow-sm"><i class="fas fa-check-circle me-1"></i>' . $matches[1] . '</span>';
+                }
+            },
+            $text
+        );
+
+        // 10. Limpieza de saltos de línea y párrafos
         $text = nl2br($text);
-        
-        // Eliminar completamente múltiples <br> consecutivos después de títulos
-        $text = preg_replace('/(<strong>.*?<\/strong>)(\s*<br\s*\/?>)+/', '$1<br>', $text);
-        
-        // Reducir múltiples <br> consecutivos en general a máximo 1
-        $text = preg_replace('/(<br\s*\/?>){2,}/', '<br>', $text);
-
-        // Limpiar <br> dentro de las etiquetas <li> y <ul>
-        $text = str_replace(['<li><br>', '<br></li>', '<ul><br>', '<br></ul>'], ['<li>', '</li>', '<ul>', '</ul>'], $text);
-        
-        // Limpiar espacios en blanco excesivos entre etiquetas HTML
-        $text = preg_replace('/>\s+</', '><', $text);
+        $text = preg_replace('/<br\s*\/?>\s*(<\/?(?:ul|li|h[1-6]|hr|div|p))/iu', '$1', $text);
+        $text = preg_replace('/(<\/(?:ul|li|h[1-6]|hr|div|p)>)\s*<br\s*\/?>/iu', '$1', $text);
+        $text = preg_replace('/(<div[^>]*>)\s*<br\s*\/?>/iu', '$1', $text);
+        $text = preg_replace('/<br\s*\/?>\s*(<\/div>)/iu', '$1', $text);
+        $text = preg_replace('/(<br\s*\/?>){2,}/iu', '<br>', $text);
 
         return $text;
     }

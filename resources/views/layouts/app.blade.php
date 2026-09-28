@@ -34,6 +34,9 @@
       <link rel="stylesheet" href="/plantilla/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
       <link rel="stylesheet" href="/plantilla/assets/vendor/libs/apex-charts/apex-charts.css" />
 
+      <!-- Page Styles -->
+      @stack('styles')
+
       <!-- Core JS -->
       <script src="/plantilla/assets/vendor/js/helpers.js"></script>
 

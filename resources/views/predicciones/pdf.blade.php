@@ -135,6 +135,73 @@
         .ai-analysis-content table tr:last-child td {
             border-bottom: none;
         }
+
+        .ai-section-title {
+            background-color: #f0f7f7;
+            border-left: 3px solid #0d9488;
+            padding: 6px 10px;
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+        .ai-section-title h5 {
+            margin: 0;
+            font-size: 13px;
+            color: #0f766e;
+            font-weight: bold;
+        }
+
+        .ai-clinical-alert {
+            padding: 8px 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .ai-clinical-alert-danger {
+            background-color: #fff0f0;
+            border-left: 4px solid #dc2626;
+            color: #991b1b;
+        }
+        .ai-clinical-alert-warning {
+            background-color: #fffbeb;
+            border-left: 4px solid #d97706;
+            color: #92400e;
+        }
+
+        .ai-interpretation-box {
+            background-color: #f8fafc;
+            border-left: 3px solid #3b82f6;
+            padding: 6px 10px;
+            margin: 4px 0 8px 15px;
+            font-size: 11px;
+            color: #334155;
+        }
+
+        .ai-list-item {
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            background-color: #f8fafc;
+            font-size: 11px;
+            list-style-type: none;
+        }
+
+        .ai-divider {
+            border: 0;
+            border-top: 1px solid #cbd5e1;
+            margin: 12px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 9px;
+            font-weight: bold;
+            border-radius: 3px;
+            color: #ffffff;
+        }
+        .bg-danger { background-color: #dc2626; }
+        .bg-warning { background-color: #d97706; color: #ffffff; }
+        .bg-success { background-color: #16a34a; }
     </style>
 </head>
 <body>

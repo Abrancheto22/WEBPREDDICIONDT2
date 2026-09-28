@@ -154,6 +154,95 @@
         font-size: 12px;
     }
 }
+
+/* Estilos de elementos clínicos generados por IA */
+.ai-section-title {
+    background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 100%);
+    border-left: 4px solid #0d9488;
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.ai-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #ccfbf1;
+    color: #0f766e;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.ai-clinical-alert {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.ai-clinical-alert-danger {
+    background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%);
+    border: 1px solid #fecaca !important;
+    border-left: 5px solid #dc2626 !important;
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.08);
+}
+
+.ai-clinical-alert-danger .ai-alert-text {
+    color: #991b1b;
+    font-weight: 500;
+    line-height: 1.65;
+}
+
+.ai-clinical-alert-warning {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #fde68a !important;
+    border-left: 5px solid #d97706 !important;
+    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.08);
+}
+
+.ai-clinical-alert-warning .ai-alert-text {
+    color: #92400e;
+    font-weight: 500;
+    line-height: 1.65;
+}
+
+.ai-interpretation-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #3b82f6 !important;
+    border-radius: 8px;
+    padding: 0.85rem 1.15rem;
+    margin: 0.5rem 0 1rem 1.25rem;
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: #475569;
+}
+
+.ai-list-item {
+    padding: 9px 14px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #eef2f6;
+    margin-bottom: 7px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.ai-list-item:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.ai-divider {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+    margin: 1.75rem 0;
+}
 </style>
 <div class="container mt-4">
     <div class="row justify-content-center">

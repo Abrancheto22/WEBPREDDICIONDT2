@@ -4,240 +4,7 @@
 
 @push('styles')
 <style>
-    /* Timer styles */
-    #timer {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        font-weight: 600;
-        z-index: 1000;
-        font-size: 0.9rem;
-        border: 2px solid rgba(255,255,255,0.2);
-    }
-    
-    .modal-timer {
-        font-size: 1.5rem;
-        font-weight: bold;
-        text-align: center;
-        margin: 15px 0;
-        color: #0d6efd;
-    }
-
-    /* Professional header styles */
-    .professional-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 15px 15px 0 0;
-        padding: 25px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .professional-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-        opacity: 0.3;
-    }
-
-    .professional-header h3 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0;
-        position: relative;
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .professional-header .header-icon {
-        background: rgba(255,255,255,0.2);
-        padding: 12px;
-        border-radius: 12px;
-        font-size: 1.5rem;
-    }
-
-    .professional-header .subtitle {
-        margin-top: 8px;
-        opacity: 0.9;
-        font-size: 1rem;
-        font-weight: 400;
-        position: relative;
-        z-index: 1;
-    }
-
-    /* Card improvements */
-    .main-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
-
-    .section-card {
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        transition: all 0.3s ease;
-    }
-
-    .section-card:hover {
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        transform: translateY(-2px);
-    }
-
-    .section-title {
-        color: #495057;
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .section-icon {
-        color: #667eea;
-        font-size: 1.2rem;
-    }
-
-    .form-label {
-        color: #495057;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control {
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-        font-size: 0.95rem;
-    }
-
-    .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-
-    .form-select {
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-
-    .btn-gradient-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        color: white;
-        font-weight: 600;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-gradient-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-
-    .btn-gradient-info {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        border: none;
-        color: white;
-        font-weight: 600;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
-    }
-
-    .btn-gradient-info:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
-        color: white;
-    }
-
-    .btn-outline-secondary {
-        border: 2px solid #6c757d;
-        color: #6c757d;
-        font-weight: 600;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-outline-secondary:hover {
-        background: #6c757d;
-        color: white;
-        transform: translateY(-2px);
-    }
-
-    .result-section {
-        margin-top: 2rem;
-        animation: fadeInUp 0.5s ease;
-    }
-
-    .result-card {
-        border-left: 4px solid #667eea;
-    }
-
-    .result-content {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        min-height: 100px;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .alert {
-        border: none;
-        border-radius: 10px;
-        padding: 1rem 1.5rem;
-    }
-
-    .alert-danger {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-        color: white;
-    }
-
-    .alert-warning {
-        background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
-        color: white;
-    }
-
-    .form-text {
-        color: #6c757d;
-        font-size: 0.875rem;
-    }
+    {!! file_get_contents(resource_path('css/predicciones-create.css')) !!}
 </style>
 @endpush
 
@@ -458,7 +225,7 @@
                             <div class="mb-3">
                                 <label for="pedigree" class="form-label fw-semibold">
                                     <i class="fas fa-dna me-2 text-info"></i>
-                                    Función Pedigree de Diabetes
+                                    Factor hereditario
                                 </label>
                                 <input type="number" step="0.001" name="pedigree" id="pedigree" 
                                         class="form-control @error('pedigree') is-invalid @enderror" 
@@ -1005,36 +772,64 @@
                 }
                 
                 // Mostrar el resultado del análisis de IA
-                const analysis = result.analysis;
+                let analysis = result.analysis;
                 const patientData = result.patient_data;
-                
-                // Formatear el análisis para mejor presentación
-                const formattedAnalysis = analysis.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                                  .replace(/\n/g, '<br>')
-                                                  .replace(/(\d+\.\s)/g, '<br><strong>$1</strong>');
+
+                // Filtrar cualquier advertencia de discrepancia clínica si estuviera presente
+                analysis = analysis.replace(/<div class="ai-clinical-alert[^>]*>.*?<\/div>/gis, '');
+                analysis = analysis.replace(/^[¡!]?\s*ADVERTENCIA\s+CL[IÍ]NICA[^\n<]*/gim, '');
 
                 let genderNote = '';
                 if (patientData.sexo === 'Masculino' && patientData.embarazos_originales > 0) {
-                    genderNote = `<div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle"></i> 
-                        <strong>Nota:</strong> Se detectó que el paciente es masculino, por lo que el número de embarazos se ajustó automáticamente de ${patientData.embarazos_originales} a ${patientData.embarazos_ajustados} para el análisis.
+                    genderNote = `<div class="alert alert-info mt-3 mb-3 border-0 shadow-sm d-flex align-items-center">
+                        <i class="fas fa-info-circle fs-4 me-3 text-info"></i> 
+                        <div>
+                            <strong>Ajuste Clínico de Parámetros:</strong> El paciente es de sexo masculino, por lo que el parámetro de embarazos se ajustó automáticamente de ${patientData.embarazos_originales} a ${patientData.embarazos_ajustados} para una evaluación médica precisa.
+                        </div>
                     </div>`;
                 }
 
+                const fechaActual = new Date().toLocaleDateString('es-ES', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+
                 aiAnalysisContent.innerHTML = `
-                    <div class="mb-3">
-                        <h5 class="text-primary">
-                            <i class="fas fa-user-md"></i> 
-                            Análisis Médico para: ${patientData.nombre}
-                        </h5>
-                        <small class="text-muted">Sexo: ${patientData.sexo}</small>
-                    </div>
-                    ${genderNote}
-                    <div class="analysis-content">
-                        ${formattedAnalysis}
-                    </div>
-                    <div class="mt-3 text-muted">
-                        <small><i class="fas fa-robot"></i> Análisis generado por Inteligencia Artificial Gemini</small>
+                    <div class="ai-report-container">
+                        <!-- Cabecera Médica Principal -->
+                        <div class="ai-report-header mb-4 p-4 rounded-3 text-white">
+                            <div>
+                                <div class="d-inline-flex align-items-center bg-white bg-opacity-25 px-3 py-1 rounded-pill small fw-bold text-white mb-2">
+                                    <i class="fas fa-file-medical-alt me-2"></i> INFORME CLÍNICO ESPECIALIZADO
+                                </div>
+                                <h4 class="mb-1 fw-bold text-white">
+                                    ${patientData.nombre}
+                                </h4>
+                                <div class="d-flex flex-wrap gap-3 small text-white-50 mt-1">
+                                    <span><i class="fas fa-venus-mars me-1"></i> Sexo: <strong class="text-white">${patientData.sexo}</strong></span>
+                                    <span><i class="fas fa-microchip me-1"></i> Motor: <strong class="text-white">Gemini 3.6 Flash</strong></span>
+                                    <span><i class="fas fa-calendar-alt me-1"></i> Fecha: <strong class="text-white">${fechaActual}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${genderNote}
+
+                        <!-- Cuerpo del Informe Clínico -->
+                        <div class="ai-report-body p-4 bg-white rounded-3 shadow-sm border" id="aiReportPrintableArea">
+                            ${analysis}
+                        </div>
+
+                        <!-- Pie de Aviso Médico -->
+                        <div class="mt-3 p-3 bg-light rounded-3 border text-muted small d-flex align-items-center">
+                            <i class="fas fa-shield-alt text-primary fs-4 me-3 flex-shrink-0"></i>
+                            <div>
+                                <strong>Soporte a la Decisión Médica:</strong> Este análisis ha sido estructurado mediante Inteligencia Artificial clínica para el apoyo en la estratificación de riesgo y evaluación médica. Debe ser contrastado y validado en su totalidad por el facultativo médico responsable.
+                            </div>
+                        </div>
                     </div>
                 `;
                 
