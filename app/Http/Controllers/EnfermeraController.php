@@ -12,6 +12,7 @@ class EnfermeraController extends Controller
 {
     public function index()
     {
+        abort_unless((int) Auth::user()->idrol === 1, 403);
         $enfermeras = Enfermera::with('usuario')
             ->get()
             ->map(function ($enfermera) {
@@ -24,8 +25,14 @@ class EnfermeraController extends Controller
 
     public function create()
     {
-        // Filtrar usuarios que tienen el rol enfermera (idrol = 3)
-        $usuarios = User::where('idrol', 3)->get();
+        $user = Auth::user();
+        if ((int) $user->idrol === 3) {
+            abort_if($user->enfermera()->exists(), 403, 'La cuenta ya tiene un perfil de enfermería.');
+            $usuarios = User::whereKey($user->id)->get();
+        } else {
+            abort_unless((int) $user->idrol === 1, 403);
+            $usuarios = User::where('idrol', 3)->get();
+        }
         
         if (request()->routeIs('enfermeras.create')) {
             return view('enfermeras.create', compact('usuarios'));
@@ -36,55 +43,51 @@ class EnfermeraController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $user = Auth::user();
+        abort_unless(in_array((int) $user->idrol, [1, 3], true), 403);
+        if ((int) $user->idrol === 3) {
+            abort_if($user->enfermera()->exists(), 403, 'La cuenta ya tiene un perfil de enfermería.');
+        }
+        $rules = [
             'DNI' => 'required|string|max:20|unique:efermera',
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'numero' => 'required|string|max:20',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'iduser' => 'required|exists:users,id|unique:efermera,iduser',
-        ]);
+        ];
+        if ((int) $user->idrol === 1) {
+            $rules['iduser'] = 'required|exists:users,id,idrol,3|unique:efermera,iduser';
+        }
+        $request->validate($rules);
 
         $enfermera = new Enfermera();
         $enfermera->DNI = $request->DNI;
         $enfermera->nombre = $request->nombre;
         $enfermera->apellido = $request->apellido;
         $enfermera->numero = $request->numero;
-        $enfermera->iduser = $request->iduser;
+        $enfermera->iduser = (int) $user->idrol === 1 ? $request->iduser : $user->id;
 
         if ($request->hasFile('imagen')) {
-            // Obtener el archivo
-            $file = $request->file('imagen');
-            
-            // Generar un nombre para la imagen
-            $nombreImagen = 'enfermera_' . $file->getClientOriginalName();
-            $rutaImagen = public_path('images/enfermeras/' . $nombreImagen);
-            
-            // Verificar si la imagen ya existe
-            if (file_exists($rutaImagen)) {
-                // Si existe, usar la ruta existente
-                $enfermera->imagen = 'images/enfermeras/' . $nombreImagen;
-            } else {
-                // Si no existe, mover la imagen
-                $path = $file->move(public_path('images/enfermeras'), $nombreImagen);
-                $enfermera->imagen = 'images/enfermeras/' . $nombreImagen;
-            }
+            $enfermera->imagen = $request->file('imagen')->store('images/enfermeras', 'public');
         }
 
         $enfermera->save();
 
-        return redirect()->route('enfermeras.index')->with('success', 'Enfermera creada exitosamente');
+        return (int) $user->idrol === 3
+            ? redirect()->route('profile')->with('success', 'Perfil de enfermería creado exitosamente')
+            : redirect()->route('enfermeras.index')->with('success', 'Enfermera creada exitosamente');
     }
 
     public function edit($idenfermera)
     {
         $enfermera = Enfermera::findOrFail($idenfermera);
+        $this->authorizeEnfermeraAccess($enfermera);
         
         // Filtrar usuarios que tienen el rol enfermera
         // Incluimos el usuario actual de la enfermera
-        $usuarios = User::where('idrol', 3)
-            ->orWhere('id', $enfermera->iduser)
-            ->get();
+        $usuarios = (int) Auth::user()->idrol === 1
+            ? User::where('idrol', 3)->orWhere('id', $enfermera->iduser)->get()
+            : User::whereKey(Auth::id())->get();
         
         return view('enfermeras.edit', compact('enfermera', 'usuarios'));
     }
@@ -92,39 +95,34 @@ class EnfermeraController extends Controller
     public function update(Request $request, $idenfermera)
     {
         $enfermera = Enfermera::findOrFail($idenfermera);
+        $this->authorizeEnfermeraAccess($enfermera);
+        $user = Auth::user();
 
-        $request->validate([
+        $rules = [
             'DNI' => 'required|string|max:20|unique:efermera,DNI,' . $idenfermera . ',idenfermera',
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'numero' => 'required|string|max:20',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'iduser' => 'required|exists:users,id|unique:efermera,iduser,' . $idenfermera . ',idenfermera',
-        ]);
+        ];
+        if ((int) $user->idrol === 1) {
+            $rules['iduser'] = 'required|exists:users,id,idrol,3|unique:efermera,iduser,' . $idenfermera . ',idenfermera';
+        }
+        $request->validate($rules);
 
         $enfermera->DNI = $request->DNI;
         $enfermera->nombre = $request->nombre;
         $enfermera->apellido = $request->apellido;
         $enfermera->numero = $request->numero;
-        $enfermera->iduser = $request->iduser;
+        if ((int) $user->idrol === 1) {
+            $enfermera->iduser = $request->iduser;
+        }
 
         if ($request->hasFile('imagen')) {
-            // Obtener el archivo
-            $file = $request->file('imagen');
-            
-            // Generar un nombre para la imagen
-            $nombreImagen = 'enfermera_' . $file->getClientOriginalName();
-            $rutaImagen = public_path('images/enfermeras/' . $nombreImagen);
-            
-            // Verificar si la imagen ya existe
-            if (file_exists($rutaImagen)) {
-                // Si existe, usar la ruta existente
-                $enfermera->imagen = 'images/enfermeras/' . $nombreImagen;
-            } else {
-                // Si no existe, mover la imagen
-                $path = $file->move(public_path('images/enfermeras'), $nombreImagen);
-                $enfermera->imagen = 'images/enfermeras/' . $nombreImagen;
+            if ($enfermera->imagen && Storage::disk('public')->exists($enfermera->imagen)) {
+                Storage::disk('public')->delete($enfermera->imagen);
             }
+            $enfermera->imagen = $request->file('imagen')->store('images/enfermeras', 'public');
         }
 
         $enfermera->save();
@@ -141,6 +139,7 @@ class EnfermeraController extends Controller
 
     public function destroy($idenfermera)
     {
+        abort_unless((int) Auth::user()->idrol === 1, 403);
         $enfermera = Enfermera::findOrFail($idenfermera);
         
         // Eliminar la imagen si existe
@@ -156,6 +155,21 @@ class EnfermeraController extends Controller
     public function show($idenfermera)
     {
         $enfermera = Enfermera::with('usuario')->findOrFail($idenfermera);
+        $this->authorizeEnfermeraAccess($enfermera);
         return view('enfermeras.show', compact('enfermera'));
+    }
+
+    private function authorizeEnfermeraAccess(Enfermera $enfermera): void
+    {
+        $user = Auth::user();
+        abort_unless($user, 401);
+        if ((int) $user->idrol === 1) {
+            return;
+        }
+        abort_unless(
+            (int) $user->idrol === 3 && (int) $enfermera->iduser === (int) $user->id,
+            403,
+            'No tiene permisos sobre este perfil de enfermería.'
+        );
     }
 }

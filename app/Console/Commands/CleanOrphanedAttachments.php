@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Prediccion;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
 
 class CleanOrphanedAttachments extends Command
 {
@@ -45,22 +44,19 @@ class CleanOrphanedAttachments extends Command
         $referencedPaths = array_unique($referencedPaths);
         $this->info('Archivos referenciados en la base de datos: ' . count($referencedPaths));
         
-        // Obtener todos los archivos en el directorio de attachments
-        $attachmentsPath = storage_path('app/attachments');
-        
-        if (!File::exists($attachmentsPath)) {
+        // Usar el mismo disco privado configurado para los adjuntos.
+        $disk = Storage::disk(config('filesystems.attachments_disk', 'local'));
+        $allFiles = $disk->allFiles('attachments');
+
+        if (empty($allFiles)) {
             $this->info('El directorio de attachments no existe.');
             return 0;
         }
-        
-        $allFiles = File::allFiles($attachmentsPath);
         $orphanedFiles = [];
-        
-        foreach ($allFiles as $file) {
-            $relativePath = 'attachments/' . $file->getRelativePathname();
-            
-            if (!in_array($relativePath, $referencedPaths)) {
-                $orphanedFiles[] = $file->getPathname();
+
+        foreach ($allFiles as $path) {
+            if (!in_array($path, $referencedPaths, true)) {
+                $orphanedFiles[] = $path;
             }
         }
         
@@ -93,7 +89,7 @@ class CleanOrphanedAttachments extends Command
         
         foreach ($orphanedFiles as $file) {
             try {
-                if (File::delete($file)) {
+                if ($disk->delete($file)) {
                     $deletedCount++;
                     $this->line('Eliminado: ' . $file);
                 } else {
@@ -112,35 +108,6 @@ class CleanOrphanedAttachments extends Command
             $this->warn("- Errores: {$errorCount}");
         }
         
-        // Limpiar directorios vacíos
-        $this->cleanEmptyDirectories($attachmentsPath);
-        
         return 0;
-    }
-    
-    /**
-     * Limpiar directorios vacíos recursivamente
-     */
-    private function cleanEmptyDirectories($path)
-    {
-        if (!File::isDirectory($path)) {
-            return;
-        }
-        
-        $directories = File::directories($path);
-        
-        foreach ($directories as $directory) {
-            $this->cleanEmptyDirectories($directory);
-            
-            // Si el directorio está vacío después de la limpieza recursiva, eliminarlo
-            if (count(File::allFiles($directory)) === 0 && count(File::directories($directory)) === 0) {
-                try {
-                    File::deleteDirectory($directory);
-                    $this->line('Directorio vacío eliminado: ' . $directory);
-                } catch (\Exception $e) {
-                    $this->error('Error al eliminar directorio ' . $directory . ': ' . $e->getMessage());
-                }
-            }
-        }
     }
 }

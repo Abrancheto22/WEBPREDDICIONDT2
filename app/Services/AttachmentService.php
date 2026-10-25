@@ -4,8 +4,8 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class AttachmentService
 {
@@ -23,6 +23,9 @@ class AttachmentService
      * Tamaño máximo total permitido (en bytes)
      */
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+
+    /** Número máximo de archivos por operación */
+    const MAX_FILES = 5;
 
     /**
      * Extensiones de archivo permitidas
@@ -58,8 +61,14 @@ class AttachmentService
      */
     public function storeMultipleFiles(array $files): array
     {
+        if (count($files) > self::MAX_FILES) {
+            throw new \Exception('No se pueden almacenar más de ' . self::MAX_FILES . ' archivos por operación.');
+        }
+
         $attachmentPaths = [];
         $attachmentNames = [];
+
+        $this->validateTotalSize($files);
 
         foreach ($files as $file) {
             if ($file instanceof UploadedFile && $file->isValid()) {
@@ -88,23 +97,19 @@ class AttachmentService
     {
         $this->validateFile($file);
 
-        // Generar nombre único para el archivo
+        // Guardar con un nombre aleatorio para evitar colisiones y rutas aportadas por el cliente.
         $originalName = $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
-        $fileName = time() . '_' . uniqid() . '.' . $extension;
+        $fileName = Str::random(40) . '.' . strtolower($extension);
 
-        // Almacenar el archivo
-        $path = $file->storeAs(self::ATTACHMENT_DIRECTORY, $fileName, 'public');
+        // Los adjuntos clínicos nunca deben escribirse en el disco público.
+        $path = $file->storeAs(self::ATTACHMENT_DIRECTORY, $fileName, $this->diskName());
 
         if (!$path) {
-            throw new \Exception('Error al almacenar el archivo: ' . $originalName);
+            throw new \Exception('No se pudo almacenar el archivo adjunto.');
         }
 
-        Log::info('Archivo almacenado exitosamente', [
-            'original_name' => $originalName,
-            'stored_path' => $path,
-            'file_size' => $file->getSize()
-        ]);
+        Log::info('Archivo adjunto almacenado en disco privado.', ['path' => $path]);
 
         return [
             'path' => $path,
@@ -202,11 +207,10 @@ class AttachmentService
     public function deleteFile(string $path): bool
     {
         try {
-            // Construir la ruta completa
-            $fullPath = storage_path('app/public/' . $path);
-            
-            if (File::exists($fullPath)) {
-                $result = File::delete($fullPath);
+            $disk = $this->disk();
+
+            if ($disk->exists($path)) {
+                $result = $disk->delete($path);
                 
                 if ($result) {
                     Log::info('Archivo eliminado exitosamente: ' . $path);
@@ -233,8 +237,7 @@ class AttachmentService
      */
     public function fileExists(string $path): bool
     {
-        $fullPath = storage_path('app/public/' . $path);
-        return File::exists($fullPath);
+        return $this->disk()->exists($path);
     }
 
     /**
@@ -245,7 +248,11 @@ class AttachmentService
      */
     public function getFullPath(string $path): string
     {
-        return storage_path('app/public/' . $path);
+        if (config('filesystems.disks.' . $this->diskName() . '.driver') !== 'local') {
+            throw new \LogicException('Un disco remoto no tiene una ruta absoluta local.');
+        }
+
+        return $this->disk()->path($path);
     }
 
     /**
@@ -256,19 +263,22 @@ class AttachmentService
      */
     public function getFileInfo(string $path): ?array
     {
-        $fullPath = $this->getFullPath($path);
-        
-        if (!File::exists($fullPath)) {
+        $disk = $this->disk();
+        if (!$disk->exists($path)) {
             return null;
         }
+
+        $fullPath = config('filesystems.disks.' . $this->diskName() . '.driver') === 'local'
+            ? $this->getFullPath($path)
+            : null;
 
         return [
             'path' => $path,
             'full_path' => $fullPath,
-            'size' => File::size($fullPath),
-            'mime_type' => File::mimeType($fullPath),
-            'extension' => File::extension($fullPath),
-            'last_modified' => File::lastModified($fullPath)
+            'size' => $disk->size($path),
+            'mime_type' => $disk->mimeType($path),
+            'extension' => pathinfo($path, PATHINFO_EXTENSION),
+            'last_modified' => $disk->lastModified($path)
         ];
     }
 
@@ -281,24 +291,13 @@ class AttachmentService
      */
     public function cleanOrphanedFiles(array $referencedPaths, bool $dryRun = false): array
     {
-        $attachmentsPath = storage_path('app/public/' . self::ATTACHMENT_DIRECTORY);
-        
-        if (!File::exists($attachmentsPath)) {
-            return [
-                'orphaned_files' => [],
-                'deleted_count' => 0,
-                'errors' => []
-            ];
-        }
-
-        $allFiles = File::allFiles($attachmentsPath);
+        $disk = $this->disk();
+        $allFiles = $disk->allFiles(self::ATTACHMENT_DIRECTORY);
         $orphanedFiles = [];
 
-        foreach ($allFiles as $file) {
-            $relativePath = self::ATTACHMENT_DIRECTORY . '/' . $file->getRelativePathname();
-            
-            if (!in_array($relativePath, $referencedPaths)) {
-                $orphanedFiles[] = $relativePath;
+        foreach ($allFiles as $path) {
+            if (!in_array($path, $referencedPaths, true)) {
+                $orphanedFiles[] = $path;
             }
         }
 
@@ -318,5 +317,15 @@ class AttachmentService
             'deleted_count' => $result['deleted'],
             'errors' => $result['errors']
         ];
+    }
+
+    private function diskName(): string
+    {
+        return (string) config('filesystems.attachments_disk', 'local');
+    }
+
+    private function disk()
+    {
+        return Storage::disk($this->diskName());
     }
 }

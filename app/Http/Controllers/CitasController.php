@@ -16,6 +16,11 @@ class CitasController extends Controller
     public function index(Request $request)
     {
         $query = Cita::with(['paciente', 'doctor', 'enfermera']);
+        if ((int) Auth::user()->idrol === 2) {
+            $doctorId = Auth::user()->doctor?->iddoctor;
+            abort_unless($doctorId, 403, 'La cuenta no tiene un perfil médico asociado.');
+            $query->where('iddoctor', $doctorId);
+        }
 
         if ($request->has('search')) {
             $search = $request->get('search');
@@ -83,6 +88,7 @@ class CitasController extends Controller
     {
         $cita = Cita::with(['paciente', 'doctor', 'enfermera'])
             ->findOrFail($idcita);
+        $this->authorizeCitaAccess($cita);
         
         return view('citas.show', compact('cita'));
     }
@@ -156,6 +162,12 @@ class CitasController extends Controller
     // Start with the base query for the citas.
     $citasQuery = Cita::with(['paciente', 'doctor', 'enfermera', 'triaje']);
 
+    if ((int) Auth::user()->idrol === 2) {
+        $doctorId = Auth::user()->doctor?->iddoctor;
+        abort_unless($doctorId, 403, 'La cuenta no tiene un perfil médico asociado.');
+        $citasQuery->where('iddoctor', $doctorId);
+    }
+
     // Check if the 'estado' filter is present in the request and not empty.
     if ($request->has('estado') && !empty($request->estado)) {
         // Apply the where clause to filter by the specified estado.
@@ -179,4 +191,20 @@ class CitasController extends Controller
     $selectedEstado = $request->estado;
     return view('citas_doctores.index', compact('citas', 'selectedEstado'));
 }
+
+    private function authorizeCitaAccess(Cita $cita): void
+    {
+        $user = Auth::user();
+        abort_unless($user, 401);
+
+        if ((int) $user->idrol === 1 || (int) $user->idrol === 3) {
+            return;
+        }
+        if ((int) $user->idrol === 2) {
+            abort_unless((int) $cita->iddoctor === (int) $user->doctor?->iddoctor, 403);
+            return;
+        }
+
+        abort(403, 'No tiene permisos para ver esta cita.');
+    }
 }

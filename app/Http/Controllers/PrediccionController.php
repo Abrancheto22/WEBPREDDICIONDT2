@@ -22,23 +22,46 @@ class PrediccionController extends Controller
 {
     public function index()
     {
-        $predicciones = Prediccion::with(['cita.paciente'])->get();
+        $user = auth()->user();
+        $query = Prediccion::with(['cita.paciente']);
+
+        if ((int) $user->idrol === 2) {
+            $doctorId = $user->doctor?->iddoctor;
+            abort_unless($doctorId, 403, 'La cuenta no tiene un perfil médico asociado.');
+            $query->whereHas('cita', fn ($cita) => $cita->where('iddoctor', $doctorId));
+        } elseif ((int) $user->idrol === 4) {
+            $pacienteId = $user->paciente?->idpaciente;
+            abort_unless($pacienteId, 403, 'La cuenta no tiene un perfil de paciente asociado.');
+            $query->whereHas('cita', fn ($cita) => $cita->where('idpaciente', $pacienteId));
+        } else {
+            abort_unless((int) $user->idrol === 1, 403);
+        }
+
+        $predicciones = $query->get();
         return view('predicciones.index', compact('predicciones'));
     }
 
     public function create($idcita = null)
 {
+    $cita = null;
     if ($idcita) {
         
         $cita = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->find($idcita);
         if (! $cita) {
             return redirect()->back()->with('error', 'Cita no encontrada');
         }
+        $this->authorizeAppointment($cita);
         if (! $cita->triaje) {
             return redirect()->back()->with('error', 'La cita no tiene un triaje asociado');
         }
     }
-    $citas = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera'])->get();
+    $citasQuery = Cita::with(['triaje', 'paciente', 'doctor', 'enfermera']);
+    if ((int) auth()->user()->idrol === 2) {
+        $doctorId = auth()->user()->doctor?->iddoctor;
+        abort_unless($doctorId, 403, 'La cuenta no tiene un perfil médico asociado.');
+        $citasQuery->where('iddoctor', $doctorId);
+    }
+    $citas = $citasQuery->get();
 
 
 
@@ -57,26 +80,28 @@ class PrediccionController extends Controller
         try {
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
-                'embarazos' => 'required|numeric|min:0|max:500',
+                'embarazos' => 'required|integer|min:0|max:20',
                 'glucosa' => 'required|numeric|min:0|max:500', 
                 'presion_sanguinea' => 'required|numeric|min:0|max:180',
-                'grosor_piel' => 'required|numeric|min:0',
-                'insulina' => 'required|numeric|min:0|max:200',
-                'BMI' => 'required|numeric|min:0|max:180',
-                'pedigree' => 'required|numeric|min:0|max:2',
-                'edad' => 'required|numeric|min:18',
-                'observacion' => 'nullable|string',
-                'documentos_adjuntos' => 'nullable|array',
+                'grosor_piel' => 'required|numeric|min:0|max:100',
+                'insulina' => 'required|numeric|min:0|max:1000',
+                'BMI' => 'required|numeric|min:0|max:100',
+                'pedigree' => 'required|numeric|min:0|max:5',
+                'edad' => $this->predictionAgeRule(),
+                'observacion' => 'nullable|string|max:5000',
+                'documentos_adjuntos' => 'nullable|array|max:5',
                 'documentos_adjuntos.*' => 'file|mimes:pdf,docx,jpg,png|max:10240', // 10MB por archivo
             ]);
+
+            $cita = Cita::with('paciente')->findOrFail($validated['idcita']);
+            $this->authorizeAppointment($cita);
 
             // Manejo de archivos adjuntos
             $attachmentPaths = [];
             $attachmentNames = [];
             if ($request->hasFile('documentos_adjuntos')) {
                 foreach ($request->file('documentos_adjuntos') as $file) {
-                    $fileName = time() . '_' . $file->getClientOriginalName();
-                    $filePath = $file->storeAs('attachments', $fileName, 'public'); // Guardar en storage/app/public/attachments
+                    $filePath = $file->store('attachments', config('filesystems.attachments_disk', 'local'));
                     $attachmentPaths[] = $filePath;
                     $attachmentNames[] = $file->getClientOriginalName();
                 }
@@ -88,23 +113,7 @@ class PrediccionController extends Controller
             $startTime = now();
             Session::put('prediccion_start_time', $startTime);
 
-            // Usa tu dominio de Vercel y el endpoint /predict
-            $mlApiUrl = 'https://appml-tesis.vercel.app/predict';
-
-            $response = Http::post($mlApiUrl, [
-                'Pregnancies' => (float)$validated['embarazos'],
-                'Glucose' => (float)$validated['glucosa'],
-                'BloodPressure' => (float)$validated['presion_sanguinea'],
-                'SkinThickness' => (float)$validated['grosor_piel'],
-                'Insulin' => (float)$validated['insulina'],
-                'BMI' => (float)$validated['BMI'],
-                'DiabetesPedigreeFunction' => (float)$validated['pedigree'],
-                'Age' => (float)$validated['edad'],
-            ]);
-
-            $response->throw();
-
-            $predictionResult = $response->json();
+            $predictionResult = $this->requestModelPrediction($validated);
 
             return response()->json([
                 'success' => true,
@@ -119,18 +128,18 @@ class PrediccionController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Illuminate\Http\Client\RequestException $e) {
-            Log::error('Error al conectar con la API de ML: ' . $e->getMessage(), ['url' => $mlApiUrl, 'response' => $e->response ? $e->response->body() : 'N/A']);
+            Log::error('No se pudo obtener predicción del servicio ML.', ['status' => $e->response?->status()]);
             return response()->json([
                 'success' => false,
                 'error' => 'Error al obtener la predicción del modelo de ML. Por favor, inténtelo de nuevo más tarde.',
-                'details' => $e->getMessage()
             ], 500);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error inesperado al procesar la predicción: ' . $e->getMessage());
+            Log::error('Error inesperado al procesar la predicción.', ['exception' => get_class($e)]);
             return response()->json([
                 'success' => false,
                 'error' => 'Ocurrió un error inesperado al procesar la predicción. Por favor, inténtelo de nuevo.',
-                'details' => $e->getMessage()
             ], 500);
         }
     }
@@ -140,16 +149,16 @@ class PrediccionController extends Controller
         try {
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
-                'embarazos' => 'required|numeric|min:0',
+                'embarazos' => 'required|integer|min:0|max:20',
                 'glucosa' => 'required|numeric|min:0|max:500',
                 'presion_sanguinea' => 'required|numeric|min:0|max:180',
-                'grosor_piel' => 'required|numeric|min:0',
-                'insulina' => 'required|numeric|min:0|max:200',
-                'BMI' => 'required|numeric|min:0|max:180',
-                'pedigree' => 'required|numeric|min:0|max:2',
-                'edad' => 'required|numeric|min:18',
-                'observacion' => 'nullable|string',
-                'documentos_adjuntos' => 'nullable|array',
+                'grosor_piel' => 'required|numeric|min:0|max:100',
+                'insulina' => 'required|numeric|min:0|max:1000',
+                'BMI' => 'required|numeric|min:0|max:100',
+                'pedigree' => 'required|numeric|min:0|max:5',
+                'edad' => $this->predictionAgeRule(),
+                'observacion' => 'nullable|string|max:5000',
+                'documentos_adjuntos' => 'nullable|array|max:5',
                 'documentos_adjuntos.*' => 'file|mimes:pdf,docx,jpg,png|max:10240', // 10MB por archivo
             ]);
 
@@ -158,8 +167,7 @@ class PrediccionController extends Controller
             $attachmentNames = [];
             if ($request->hasFile('documentos_adjuntos')) {
                 foreach ($request->file('documentos_adjuntos') as $file) {
-                    $fileName = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
-                    $filePath = $file->storeAs('attachments', $fileName, 'public');
+                    $filePath = $file->store('attachments', config('filesystems.attachments_disk', 'local'));
                     $attachmentPaths[] = $filePath;
                     $attachmentNames[] = $file->getClientOriginalName();
                 }
@@ -168,11 +176,12 @@ class PrediccionController extends Controller
                 Session::put('uploaded_attachment_paths', $attachmentPaths);
                 Session::put('uploaded_attachment_names', $attachmentNames);
                 
-                Log::info('Archivos adjuntos procesados para análisis IA: ' . json_encode($attachmentPaths));
             }
 
             // Obtener información del paciente
             $cita = Cita::with(['paciente', 'triaje'])->find($validated['idcita']);
+            abort_unless($cita && $cita->paciente, 404, 'Cita o paciente no encontrado.');
+            $this->authorizeAppointment($cita);
             $paciente = $cita->paciente;
             
             // Ajustar embarazos según el género del paciente
@@ -187,59 +196,10 @@ class PrediccionController extends Controller
 
             // Recuperar los archivos adjuntos de la sesión
             $attachmentPaths = Session::get('uploaded_attachment_paths', []);
-            Log::info('Attachment Paths retrieved from session: ' . json_encode($attachmentPaths));
-
-            // Construir el prompt para Gemini incluyendo el resultado si está disponible y los archivos adjuntos
-            $prompt = $this->buildGeminiPrompt($validated, $paciente, $embarazos, $resultadoPrediccion, $attachmentPaths);
-            Log::info('Gemini Prompt built: ' . $prompt);
-
-            // Preparar el contenido para la API de Gemini
+            // Enviar solo variables clínicas necesarias. No enviar identificadores,
+            // observaciones libres ni documentos que puedan contener datos identificables.
+            $prompt = $this->buildGeminiPrompt($validated, $paciente, $embarazos, $resultadoPrediccion);
             $parts = [['text' => $prompt]];
-
-            foreach ($attachmentPaths as $path) {
-                $fullPath = storage_path('app/public/attachments/' . basename($path));
-                Log::info('Processing attachment: ' . $fullPath);
-                if (file_exists($fullPath)) {
-                    $mimeType = mime_content_type($fullPath);
-                    
-                    // Procesar PDF e Imágenes como inline_data
-                    if ($mimeType === 'application/pdf' || str_starts_with($mimeType, 'image/')) {
-                        $fileContent = file_get_contents($fullPath);
-                        if ($fileContent === false) {
-                            Log::error('Failed to read file content for: ' . $fullPath);
-                            continue;
-                        }
-                        $base64Content = base64_encode($fileContent);
-                        
-                        Log::info('File exists: ' . $fullPath . ', MIME Type: ' . $mimeType . ', Base64 content length: ' . strlen($base64Content));
-
-                        $parts[] = [
-                            'inline_data' => [
-                                'mime_type' => $mimeType,
-                                'data' => $base64Content
-                            ]
-                        ];
-                    } 
-                    // Procesar DOCX extrayendo texto
-                    elseif ($mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                        $extractedText = $this->getTextFromDocx($fullPath);
-                        if (!empty($extractedText)) {
-                            Log::info('Extracted text from DOCX: ' . $fullPath);
-                            $parts[] = [
-                                'text' => "\n\n--- Contenido extraído del documento adjunto (" . basename($path) . ") ---\n" . $extractedText
-                            ];
-                        } else {
-                            Log::warning('No text extracted from DOCX or empty: ' . $fullPath);
-                        }
-                    }
-                    else {
-                        Log::warning('Archivo adjunto con tipo MIME no soportado directamente: ' . $mimeType . ' - ' . $fullPath);
-                    }
-                } else {
-                    Log::warning('Archivo adjunto no encontrado: ' . $fullPath);
-                }
-            }
-            Log::info('Parts array before sending to Gemini: ' . json_encode($parts));
 
             // Llamar a la API de Gemini
             // IMPORTANTE: Usar config() en lugar de env() porque en producción con caché env() devuelve null
@@ -257,8 +217,7 @@ class PrediccionController extends Controller
 
             // VERIFICACIÓN EXPLÍCITA DE LA KEY
             if (empty($geminiApiKey)) {
-                Log::error('INTENTO DE LLAMADA A GEMINI SIN API KEY');
-                throw new \Exception('La API Key de Gemini está vacía. Configure GEMINI_API_KEY en el .env y ejecute "php artisan config:cache"');
+                throw new \RuntimeException('Servicio de análisis no configurado.');
             }
 
             // Construcción de la URL con la Key
@@ -270,13 +229,9 @@ class PrediccionController extends Controller
             }
 
             // Log de depuración (Ocultando parte de la key por seguridad)
-            $maskedKey = substr($geminiApiKey, 0, 4) . '...' . substr($geminiApiKey, -4);
-            Log::info("Intentando conectar a Gemini. URL Base: {$geminiUrl} | Key detectada: {$maskedKey}");
-
             // Validación final de URL antes de enviar
             if (!filter_var($urlWithKey, FILTER_VALIDATE_URL)) {
-                Log::error('URL de Gemini malformada detectada: ' . $urlWithKey);
-                throw new \Exception('La URL de la API de Gemini no tiene un formato válido. Verifique el archivo .env en el servidor.');
+                throw new \RuntimeException('El servicio de análisis no está disponible.');
             }
 
             // Llamada HTTP limpia (usando solo URL params para la auth, como prefiere Google en llamadas simples)
@@ -291,17 +246,14 @@ class PrediccionController extends Controller
             ]);
 
             if (!$response->successful()) {
-                Log::error('Error al conectar con Gemini API: ' . $response->status() . ' - ' . $response->body());
-                Log::error('Gemini API Request Payload: ' . json_encode(['contents' => [['parts' => $parts]]]));
-                throw new \Exception('Error al conectar con Gemini API: ' . $response->body());
+                Log::warning('El proveedor de análisis devolvió un estado no exitoso.', ['status' => $response->status()]);
+                throw new \RuntimeException('El análisis con IA no está disponible en este momento.');
             }
 
             $geminiResult = $response->json();
-            Log::info('Gemini API Raw Response: ' . json_encode($geminiResult));
             // Check if 'candidates' key exists and is not empty
             if (!isset($geminiResult['candidates']) || empty($geminiResult['candidates'])) {
-                Log::error('Gemini API did not return any candidates: ' . json_encode($geminiResult));
-                throw new \Exception('Gemini API did not return any candidates. Full response: ' . json_encode($geminiResult));
+                throw new \RuntimeException('El análisis con IA no devolvió un resultado utilizable.');
             }
             $analysisText = $geminiResult['candidates'][0]['content']['parts'][0]['text'] ?? 'No se pudo obtener análisis';
 
@@ -314,8 +266,8 @@ class PrediccionController extends Controller
             if ($prediccion) {
                 // Si existe, actualizar el análisis de IA
                 $prediccion->analisis_ia = $analysisText;
-                $prediccion->resultado = 0; // Valor temporal hasta que se haga la predicción ML
-                $prediccion->timer = 0; // Valor temporal
+                // No crear un resultado numérico ficticio por un análisis generativo.
+                $prediccion->timer = 0;
                 $prediccion->timer_inicio = now()->format('Y-m-d H:i:s');
                 $prediccion->timer_parada = now()->format('Y-m-d H:i:s');
                 
@@ -336,9 +288,8 @@ class PrediccionController extends Controller
                 $prediccion->BMI = $validated['BMI'];
                 $prediccion->pedigree = $validated['pedigree'];
                 $prediccion->edad = $validated['edad'];
-                $prediccion->observacion = $validated['observacion'];
+                $prediccion->observacion = $validated['observacion'] ?? null;
                 $prediccion->analisis_ia = $analysisText;
-                $prediccion->resultado = 0; // Valor temporal hasta que se haga la predicción ML
                 $prediccion->timer = 0; // Valor temporal
                 $prediccion->timer_inicio = now();
                 $prediccion->timer_parada = now();
@@ -368,11 +319,13 @@ class PrediccionController extends Controller
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error en análisis con Gemini: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
+            Log::error('Error durante el análisis con IA.', ['exception' => get_class($e)]);
             return response()->json([
                 'success' => false,
-                'error' => 'Error en el análisis con IA: ' . $e->getMessage()
+                'error' => 'No se pudo completar el análisis con IA en este momento.'
             ], 500);
         }
     }
@@ -410,13 +363,8 @@ class PrediccionController extends Controller
         }
 
         // Mejorar la presentación de las observaciones
-        $observacionesInfo = !empty($data['observacion']) 
-            ? "\n**OBSERVACIONES MÉDICAS DEL PROFESIONAL:**\n{$data['observacion']}" 
-            : "";
-
-        $prompt = "Eres un asistente médico experto en diabetes tipo 2. Analiza la siguiente información del paciente y los documentos adjuntos (si los hay) para proporcionar un análisis detallado, estratificación de riesgo, interpretación de resultados, recomendaciones y un plan terapéutico. Considera toda la información proporcionada, incluyendo los archivos adjuntos, para tu análisis.\n\n" .
-            "**INFORMACIÓN DEL PACIENTE:**\n" .
-            "- Nombre: {$paciente->nombre} {$paciente->apellido}\n" .
+        $prompt = "Eres un asistente de apoyo educativo para tamizaje de diabetes tipo 2. Explica limitaciones y recomienda evaluación profesional; no diagnostiques ni prescribas. Los datos fueron minimizados y no incluyen identificadores.\n\n" .
+            "**VARIABLES CLÍNICAS:**\n" .
             "- Sexo: {$paciente->sexo}\n" .
             "- Edad: {$data['edad']}\n" .
             "- Número de Embarazos: {$embarazos}{$sexoInfo}\n" .
@@ -426,12 +374,7 @@ class PrediccionController extends Controller
             "- Insulina: {$data['insulina']} muU/ml\n" .
             "- IMC: {$data['BMI']}\n" .
             "- Función Pedigree de Diabetes: {$data['pedigree']}\n" .
-            $observacionesInfo .
             $prediccionInfo;
-
-        if (!empty($attachmentPaths)) {
-            $prompt .= "\n\n**DOCUMENTOS ADJUNTOS:**\nSe han proporcionado documentos adicionales para el análisis. Por favor, revisa estos documentos cuidadosamente y utiliza la información contenida en ellos para enriquecer tu análisis y tus recomendaciones.\n\n**CONTENIDO DE LOS ARCHIVOS ADJUNTOS (TEMPORAL):**\nPor favor, lista brevemente el contenido principal de cada archivo adjunto para confirmar su lectura.";
-        }
 
         return $prompt;
     }
@@ -440,23 +383,22 @@ class PrediccionController extends Controller
     {
         $validated = $request->validate([
             'idcita' => 'required|exists:cita,idcita',
-            'embarazos' => 'required|numeric|min:0',
+            'embarazos' => 'required|integer|min:0|max:20',
             'glucosa' => 'required|numeric|min:0|max:500', 
             'presion_sanguinea' => 'required|numeric|min:0|max:180',
-            'grosor_piel' => 'required|numeric|min:0',
-            'insulina' => 'required|numeric|min:0|max:200',
-            'BMI' => 'required|numeric|min:0|max:180',
-            'pedigree' => 'required|numeric|min:0|max:2',
-            'edad' => 'required|numeric|min:18',
-            'observacion' => 'nullable|string',
-            'probability_diabetes' => 'required|numeric|min:0|max:1',
-            'timer' => 'required|string',
-            'timer_duration_ms' => 'required|numeric|min:0',
-            'attachment_paths' => 'nullable|array',
-            'attachment_names' => 'nullable|array',
+            'grosor_piel' => 'required|numeric|min:0|max:100',
+            'insulina' => 'required|numeric|min:0|max:1000',
+            'BMI' => 'required|numeric|min:0|max:100',
+            'pedigree' => 'required|numeric|min:0|max:5',
+            'edad' => $this->predictionAgeRule('numeric'),
+            'observacion' => 'nullable|string|max:5000',
         ]);
 
         try {
+            $cita = Cita::with('paciente')->findOrFail($validated['idcita']);
+            $this->authorizeAppointment($cita);
+            $predictionResult = $this->requestModelPrediction($validated);
+
             // Buscar si ya existe una predicción para esta cita
             $prediccion = Prediccion::where('idcita', $validated['idcita'])->first();
             
@@ -475,58 +417,51 @@ class PrediccionController extends Controller
             $prediccion->BMI = $validated['BMI'];
             $prediccion->pedigree = $validated['pedigree'];
             $prediccion->edad = $validated['edad'];
-            $prediccion->observacion = $validated['observacion'];
-            $prediccion->resultado = $validated['probability_diabetes'];
+            $prediccion->observacion = $validated['observacion'] ?? null;
+            $prediccion->resultado = $predictionResult['probability_diabetes'];
             
             // **Cálculo del timer_parada y timer_inicio**
             $stopTime = now();
-            $startTime = now()->subMilliseconds($validated['timer_duration_ms']);
+            $elapsedMilliseconds = $this->elapsedPredictionMilliseconds();
+            $startTime = $stopTime->copy()->subMilliseconds($elapsedMilliseconds);
             
             $prediccion->timer_inicio = $startTime;
             $prediccion->timer_parada = $stopTime;
 
-            $timeParts = explode(':', $validated['timer']);
-            $minutes = (int)$timeParts[0];
-            $seconds = (int)$timeParts[1];
-            $milliseconds = (int)$timeParts[2];
-            $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
-            $prediccion->timer = $totalSeconds;
+            $prediccion->timer = $elapsedMilliseconds / 1000;
 
-            // Guardar archivos adjuntos desde la sesión
-            $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', []);
-            $prediccion->attachment_names = Session::get('uploaded_attachment_names', []);
+            // Los adjuntos proceden de la sesión del flujo autenticado, no del cliente.
+            $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', $prediccion->attachment_paths ?? []);
+            $prediccion->attachment_names = Session::get('uploaded_attachment_names', $prediccion->attachment_names ?? []);
 
-            $prediccion->save();
-
-            // Limpiar los datos de archivos adjuntos de la sesión después de guardar
-            Session::forget('uploaded_attachment_paths');
-            Session::forget('uploaded_attachment_names');
-
-            $cita = Cita::find($validated['idcita']);
-            if ($cita) {
+            DB::transaction(function () use ($prediccion, $cita) {
+                $prediccion->save();
                 $cita->estado = 'Realizado';
                 $cita->save();
-            }
+            });
+
+            Session::forget(['uploaded_attachment_paths', 'uploaded_attachment_names', 'prediccion_start_time']);
 
             return redirect()->route('citas_doctores.index')->with('success', 'Predicción guardada exitosamente y cita actualizada.');
 
-        } catch (ValidationException $e) {
-            return redirect()->back()->withInput()->with('error', 'Error de validación: ' . $e->getMessage());
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error al guardar la predicción confirmada: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Error al guardar la predicción. Detalles: ' . $e->getMessage());
+            Log::error('No se pudo guardar la predicción confirmada.', ['exception' => get_class($e)]);
+            return redirect()->back()->withInput()->with('error', 'No se pudo guardar la predicción. Verifique el servicio y los datos e inténtelo nuevamente.');
         }
     } 
 
     public function show($idprediccion)
     {
-        $prediccion = Prediccion::with('cita')->findOrFail($idprediccion);
+        $prediccion = $this->visiblePredictionOrFail($idprediccion)->load('cita');
         return view('predicciones.show', compact('prediccion'));
     }
 
     public function edit($idprediccion)
     {
         $prediccion = Prediccion::with(['cita.paciente', 'cita.triaje'])->findOrFail($idprediccion);
+        $this->authorizeAppointment($prediccion->cita);
         return view('predicciones.edit', compact('prediccion'));
     }
     
@@ -535,22 +470,24 @@ class PrediccionController extends Controller
         try {
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
-                'embarazos' => 'required|numeric|min:0',
+                'embarazos' => 'required|integer|min:0|max:20',
                 'glucosa' => 'required|numeric|min:0|max:500',
                 'presion_sanguinea' => 'required|numeric|min:0|max:180',
-                'grosor_piel' => 'required|numeric|min:0',
-                'insulina' => 'required|numeric|min:0|max:200',
-                'BMI' => 'required|numeric|min:0|max:180',
-                'pedigree' => 'required|numeric|min:0|max:2',
-                'edad' => 'required|numeric|min:18',
+                'grosor_piel' => 'required|numeric|min:0|max:100',
+                'insulina' => 'required|numeric|min:0|max:1000',
+                'BMI' => 'required|numeric|min:0|max:100',
+                'pedigree' => 'required|numeric|min:0|max:5',
+                'edad' => $this->predictionAgeRule(),
                 'observacion' => 'nullable|string',
-                'attachments' => 'nullable|array',
+                'attachments' => 'nullable|array|max:5',
                 'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif|max:5120',
                 'removed_attachments' => 'nullable|string',
             ]);
 
             // Manejar archivos adjuntos eliminados
             $prediccion = Prediccion::findOrFail($idprediccion);
+            $this->authorizeAppointment($prediccion->cita);
+            abort_unless((int) $prediccion->idcita === (int) $validated['idcita'], 403, 'No se puede mover una predicción a otra cita.');
             $currentPaths = $prediccion->attachment_paths ?? [];
             $currentNames = $prediccion->attachment_names ?? [];
             
@@ -560,10 +497,7 @@ class PrediccionController extends Controller
                     // Eliminar archivos físicos
                     foreach ($removedIndices as $index) {
                         if (isset($currentPaths[$index])) {
-                            $filePath = storage_path('app/' . $currentPaths[$index]);
-                            if (file_exists($filePath)) {
-                                unlink($filePath);
-                            }
+                    Storage::disk(config('filesystems.attachments_disk', 'local'))->delete($currentPaths[$index]);
                         }
                     }
                     
@@ -585,7 +519,7 @@ class PrediccionController extends Controller
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $originalName = $file->getClientOriginalName();
-                    $path = $file->store('attachments', 'local');
+                    $path = $file->store('attachments', config('filesystems.attachments_disk', 'local'));
                     
                     $newAttachmentPaths[] = $path;
                     $newAttachmentNames[] = $originalName;
@@ -604,22 +538,7 @@ class PrediccionController extends Controller
             $startTime = now();
             Session::put('prediccion_start_time', $startTime);
 
-            $mlApiUrl = env('ML_API_URL', 'https://appml-tesis.vercel.app/predict');
-
-            $response = Http::post($mlApiUrl, [
-                'Pregnancies' => (float)$validated['embarazos'],
-                'Glucose' => (float)$validated['glucosa'],
-                'BloodPressure' => (float)$validated['presion_sanguinea'],
-                'SkinThickness' => (float)$validated['grosor_piel'],
-                'Insulin' => (float)$validated['insulina'],
-                'BMI' => (float)$validated['BMI'],
-                'DiabetesPedigreeFunction' => (float)$validated['pedigree'],
-                'Age' => (float)$validated['edad'],
-            ]);
-
-            $response->throw();
-
-            $predictionResult = $response->json();
+            $predictionResult = $this->requestModelPrediction($validated);
 
             return response()->json([
                 'success' => true,
@@ -634,13 +553,15 @@ class PrediccionController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Illuminate\Http\Client\RequestException $e) {
-            Log::error('Error al conectar con la API de Flask para re-predicción: ' . $e->getMessage(), ['url' => $mlApiUrl, 'response' => $e->response ? $e->response->body() : 'N/A']);
+            Log::error('No se pudo obtener una re-predicción del servicio ML.', ['status' => $e->response?->status()]);
             return response()->json([
                 'success' => false,
                 'error' => 'No se pudo conectar con el servicio de predicción para re-evaluar. Asegúrese de que la API de ML esté en funcionamiento y accesible.'
             ], 500);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error inesperado al procesar la re-predicción: ' . $e->getMessage());
+            Log::error('Error inesperado al procesar la re-predicción.', ['exception' => get_class($e)]);
             return response()->json([
                 'success' => false,
                 'error' => 'Ocurrió un error inesperado al procesar la re-predicción. Por favor, inténtelo de nuevo.'
@@ -653,26 +574,26 @@ class PrediccionController extends Controller
         try {
             $validated = $request->validate([
                 'idcita' => 'required|exists:cita,idcita',
-                'embarazos' => 'required|numeric|min:0',
+                'embarazos' => 'required|integer|min:0|max:20',
                 'glucosa' => 'required|numeric|min:0|max:500',
                 'presion_sanguinea' => 'required|numeric|min:0|max:180',
-                'grosor_piel' => 'required|numeric|min:0',
-                'insulina' => 'required|numeric|min:0|max:200',
-                'BMI' => 'required|numeric|min:0|max:180',
-                'pedigree' => 'required|numeric|min:0|max:2',
-                'edad' => 'required|numeric|min:18',
-                'observacion' => 'nullable|string',
-                'timer' => 'required|string',
-                'probability_diabetes' => 'required|numeric|min:0|max:1',
-                // Agregamos este campo para un cálculo robusto
-                'timer_duration_ms' => 'required|numeric|min:0', 
+                'grosor_piel' => 'required|numeric|min:0|max:100',
+                'insulina' => 'required|numeric|min:0|max:1000',
+                'BMI' => 'required|numeric|min:0|max:100',
+                'pedigree' => 'required|numeric|min:0|max:5',
+                'edad' => $this->predictionAgeRule('numeric'),
+                'observacion' => 'nullable|string|max:5000',
             ]);
 
             $prediccion = Prediccion::findOrFail($idprediccion);
+            $this->authorizeAppointment($prediccion->cita);
+            abort_unless((int) $prediccion->idcita === (int) $validated['idcita'], 403, 'No se puede mover una predicción a otra cita.');
+            $predictionResult = $this->requestModelPrediction($validated);
 
             // Reemplazamos la dependencia de la sesión con un cálculo directo
             $stopTime = now();
-            $startTime = now()->subMilliseconds($validated['timer_duration_ms']);
+            $elapsedMilliseconds = $this->elapsedPredictionMilliseconds();
+            $startTime = $stopTime->copy()->subMilliseconds($elapsedMilliseconds);
 
             $prediccion->idcita = $validated['idcita'];
             $prediccion->embarazos = $validated['embarazos'];
@@ -683,29 +604,23 @@ class PrediccionController extends Controller
             $prediccion->BMI = $validated['BMI'];
             $prediccion->pedigree = $validated['pedigree'];
             $prediccion->edad = $validated['edad'];
-            $prediccion->observacion = $validated['observacion'];
+            $prediccion->observacion = $validated['observacion'] ?? null;
             
-            $timeParts = explode(':', $validated['timer']);
-            $minutes = (int)$timeParts[0];
-            $seconds = (int)$timeParts[1];
-            $milliseconds = (int)$timeParts[2];
-            $totalSeconds = ($minutes * 60) + $seconds + ($milliseconds / 100);
-            $prediccion->timer = $totalSeconds;
-            $prediccion->resultado = $validated['probability_diabetes'];
+            $prediccion->timer = $elapsedMilliseconds / 1000;
+            $prediccion->resultado = $predictionResult['probability_diabetes'];
             
             // Asignar los campos de fecha y hora
             $prediccion->timer_inicio = $startTime;
             $prediccion->timer_parada = $stopTime;
 
             // Recuperar y guardar los archivos adjuntos de la sesión
-            $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', []);
-            $prediccion->attachment_names = Session::get('uploaded_attachment_names', []);
+            $prediccion->attachment_paths = Session::get('uploaded_attachment_paths', $prediccion->attachment_paths ?? []);
+            $prediccion->attachment_names = Session::get('uploaded_attachment_names', $prediccion->attachment_names ?? []);
 
             $prediccion->save();
 
             // Limpiar los datos de archivos adjuntos de la sesión
-            Session::forget('uploaded_attachment_paths');
-            Session::forget('uploaded_attachment_names');
+            Session::forget(['uploaded_attachment_paths', 'uploaded_attachment_names', 'prediccion_start_time']);
             
             return response()->json([
                 'success' => true,
@@ -719,12 +634,13 @@ class PrediccionController extends Controller
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error al guardar la predicción editada y confirmada: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => 'Error al guardar los cambios en la predicción. Detalles: ' . $e->getMessage(),
-                'details' => $e->getMessage()
+                'error' => 'No se pudieron guardar los cambios en la predicción.',
             ], 500);
         }
     }
@@ -736,6 +652,7 @@ class PrediccionController extends Controller
         ]);
 
         $prediccion = Prediccion::findOrFail($idprediccion);
+        $this->authorizeAppointment($prediccion->cita);
         $prediccion->validar_prediccion = (int) $validated['validar_prediccion'];
         $prediccion->save();
 
@@ -749,6 +666,7 @@ class PrediccionController extends Controller
     public function destroy($idprediccion)
     {
         $prediccion = Prediccion::findOrFail($idprediccion);
+        $this->authorizeAppointment($prediccion->cita);
         $prediccion->delete();
 
         return redirect()->route('predicciones.index')
@@ -757,7 +675,7 @@ class PrediccionController extends Controller
 
     public function pdf($id)
     {
-        $prediccion = Prediccion::with(['cita.paciente'])->findOrFail($id);
+        $prediccion = $this->visiblePredictionOrFail($id)->load('cita.paciente');
         $pdf = DomPDF::loadView('predicciones.pdf', compact('prediccion'));
         return $pdf->stream('reporte-prediccion-'.$id.'.pdf');
     }
@@ -765,7 +683,7 @@ class PrediccionController extends Controller
     public function downloadAttachment($id, $index)
     {
         try {
-            $prediccion = Prediccion::findOrFail($id);
+            $prediccion = $this->visiblePredictionOrFail($id);
             
             // Verificar que existan archivos adjuntos
             if (!$prediccion->attachment_paths || !isset($prediccion->attachment_paths[$index])) {
@@ -776,16 +694,15 @@ class PrediccionController extends Controller
             $attachmentName = $prediccion->attachment_names[$index] ?? basename($attachmentPath);
             
             // Construir la ruta completa del archivo
-            $fullPath = storage_path('app/public/attachments/' . basename($attachmentPath));
-            
-            // Verificar que el archivo existe
-            if (!file_exists($fullPath)) {
+            $disk = Storage::disk(config('filesystems.attachments_disk', 'local'));
+            if (!$disk->exists($attachmentPath)) {
                 return redirect()->back()->with('error', 'El archivo adjunto no existe en el servidor.');
             }
             
-            // Descargar el archivo
-            return response()->download($fullPath, $attachmentName);
+            return $disk->download($attachmentPath, basename($attachmentName));
             
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error al descargar archivo adjunto: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al descargar el archivo adjunto.');
@@ -819,6 +736,131 @@ class PrediccionController extends Controller
                 'nivel' => 'MUY BAJO',
                 'descripcion' => 'Riesgo muy bajo de diabetes tipo 2. Continuar con hábitos saludables para mantener este estado.'
             ];
+        }
+    }
+
+    private function authorizeAppointment(Cita $cita): void
+    {
+        $user = auth()->user();
+        abort_unless($user, 401);
+
+        if ((int) $user->idrol === 1) {
+            return;
+        }
+
+        $doctorId = $user->doctor?->iddoctor;
+        abort_unless(
+            (int) $user->idrol === 2
+                && $doctorId !== null
+                && (int) $cita->iddoctor === (int) $doctorId,
+            403,
+            'No tiene permisos sobre esta cita.'
+        );
+    }
+
+    private function visiblePredictionOrFail(int|string $id): Prediccion
+    {
+        $user = auth()->user();
+        abort_unless($user, 401);
+
+        $query = Prediccion::query();
+        if ((int) $user->idrol === 1) {
+            return $query->findOrFail($id);
+        }
+
+        if ((int) $user->idrol === 2) {
+            $doctorId = $user->doctor?->iddoctor;
+            abort_unless($doctorId, 403);
+            return $query->whereHas('cita', fn ($cita) => $cita->where('iddoctor', $doctorId))
+                ->findOrFail($id);
+        }
+
+        if ((int) $user->idrol === 4) {
+            $pacienteId = $user->paciente?->idpaciente;
+            abort_unless($pacienteId, 403);
+            return $query->whereHas('cita', fn ($cita) => $cita->where('idpaciente', $pacienteId))
+                ->findOrFail($id);
+        }
+
+        abort(403, 'No tiene permisos para ver predicciones.');
+    }
+
+    private function requestModelPrediction(array $data): array
+    {
+        $endpoint = config('services.ml.predict_url');
+        if (!is_string($endpoint) || !filter_var($endpoint, FILTER_VALIDATE_URL) || !str_starts_with($endpoint, 'https://')) {
+            throw new \RuntimeException('El endpoint HTTPS del modelo no está configurado.');
+        }
+        $apiKey = config('services.ml.api_key');
+        if (!is_string($apiKey) || strlen($apiKey) < 32) {
+            throw new \RuntimeException('La clave compartida del servicio ML no está configurada de forma segura.');
+        }
+
+        $response = Http::asJson()->acceptJson()->withToken($apiKey)->connectTimeout(3)->timeout(15)->post($endpoint, [
+            'Pregnancies' => (float) $data['embarazos'],
+            'Glucose' => (float) $data['glucosa'],
+            'BloodPressure' => (float) $data['presion_sanguinea'],
+            'SkinThickness' => (float) $data['grosor_piel'],
+            'Insulin' => (float) $data['insulina'],
+            'BMI' => (float) $data['BMI'],
+            'DiabetesPedigreeFunction' => (float) $data['pedigree'],
+            'Age' => (float) $data['edad'],
+        ]);
+        $response->throw();
+
+        $result = $response->json();
+        $probability = is_array($result) ? ($result['probability_diabetes'] ?? null) : null;
+        if (!is_numeric($probability) || !is_finite((float) $probability) || (float) $probability < 0 || (float) $probability > 1) {
+            throw new \UnexpectedValueException('El servicio de ML devolvió una probabilidad inválida.');
+        }
+
+        $probability = (float) $probability;
+        $prediction = $probability >= 0.5 ? 1 : 0;
+        [$riskLevel, $riskDescription] = match (true) {
+            $probability < 0.30 => ['BAJO', 'Riesgo bajo de Diabetes Tipo 2.'],
+            $probability < 0.50 => ['MODERADO', 'Riesgo moderado. Recomendable seguimiento preventivo.'],
+            $probability < 0.70 => ['ALTO', 'Riesgo alto. Evaluación clínica prioritaria.'],
+            default => ['MUY ALTO', 'Riesgo muy alto. Atención clínica inmediata recomendada.'],
+        };
+
+        return [
+            'prediction' => $prediction,
+            'resultado' => $probability,
+            'probability_diabetes' => $probability,
+            'probability_no_diabetes' => 1 - $probability,
+            'diagnosis' => $prediction === 1 ? 'Diabetes' : 'No Diabetes',
+            'threshold_used' => 0.5,
+            'risk_level' => $riskLevel,
+            'risk_description' => $riskDescription,
+            'message' => 'Predicción procesada exitosamente.',
+            'aviso_legal' => 'Estimación de apoyo al tamizaje; no reemplaza la evaluación ni el criterio del profesional de salud.',
+        ];
+    }
+
+    private function predictionAgeRule(string $type = 'integer'): string
+    {
+        $minimum = (int) config('services.ml.age_min', 21);
+        $maximum = (int) config('services.ml.age_max', 81);
+
+        if ($minimum < 21 || $maximum < $minimum || $maximum > 81) {
+            throw new \LogicException('El rango de edades configurado para el modelo no es válido.');
+        }
+
+        return sprintf('required|%s|min:%d|max:%d', $type, $minimum, $maximum);
+    }
+
+    private function elapsedPredictionMilliseconds(): int
+    {
+        $startedAt = Session::get('prediccion_start_time');
+        if (!$startedAt) {
+            return 0;
+        }
+
+        try {
+            $startedAt = $startedAt instanceof Carbon ? $startedAt : Carbon::parse($startedAt);
+            return max(0, (int) $startedAt->diffInMilliseconds(now()));
+        } catch (\Throwable) {
+            return 0;
         }
     }
 
@@ -898,7 +940,7 @@ class PrediccionController extends Controller
         // Limpiar espacios en blanco excesivos entre etiquetas HTML
         $text = preg_replace('/>\s+</', '><', $text);
 
-        return $text;
+        return nl2br(htmlspecialchars(strip_tags(trim($text)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
     }
 
     public function export(Request $request)
@@ -909,11 +951,13 @@ class PrediccionController extends Controller
 
     public function sendEmail(Request $request, $idprediccion)
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
         $prediccion = Prediccion::with(['cita.paciente', 'cita.doctor', 'cita.enfermera'])->findOrFail($idprediccion);
+        $this->authorizeAppointment($prediccion->cita);
+        $patientEmail = $prediccion->cita->paciente?->usuario?->email;
+        abort_unless($patientEmail, 422, 'El paciente no tiene un correo registrado.');
+        $request->validate([
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::in([$patientEmail])],
+        ]);
 
         $pdf = DomPDF::loadView('predicciones.pdf', compact('prediccion'));
 
@@ -928,7 +972,8 @@ class PrediccionController extends Controller
 
             return redirect()->back()->with('success', 'Reporte enviado por correo electrónico exitosamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al enviar el reporte: ' . $e->getMessage());
+            Log::warning('No se pudo enviar el reporte por correo.', ['exception' => get_class($e)]);
+            return redirect()->back()->with('error', 'No se pudo enviar el reporte por correo.');
         }
     }
 }

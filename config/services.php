@@ -40,4 +40,11 @@ return [
         'api_url' => env('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'),
     ],
 
+    'ml' => [
+        'predict_url' => env('ML_API_URL', 'https://appml-tesis.vercel.app/predict'),
+        'api_key' => env('ML_API_KEY'),
+        'age_min' => (int) env('ML_AGE_MIN', 21),
+        'age_max' => (int) env('ML_AGE_MAX', 81),
+    ],
+
 ];

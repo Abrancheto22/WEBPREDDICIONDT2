@@ -161,8 +161,16 @@ class IndexController extends Controller
             }
         }
         // Doctores y KPIs por doctor seleccionado
-        $doctores = Doctor::select('iddoctor','nombre','apellido','sueldo')->get();
-        $selectedDoctorId = $request->input('doctor_id');
+        $doctorsQuery = Doctor::select('iddoctor','nombre','apellido','sueldo');
+        if ((int) Auth::user()->idrol === 2) {
+            $currentDoctorId = Auth::user()->doctor?->iddoctor;
+            abort_unless($currentDoctorId, 403, 'La cuenta no tiene un perfil médico asociado.');
+            $doctorsQuery->where('iddoctor', $currentDoctorId);
+            $selectedDoctorId = $currentDoctorId;
+        } else {
+            $selectedDoctorId = $request->input('doctor_id');
+        }
+        $doctores = $doctorsQuery->get();
         $doctorPredCount = null;
         $doctorCOPG = null;
 

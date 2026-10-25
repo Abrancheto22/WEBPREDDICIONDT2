@@ -476,7 +476,8 @@
                                 </label>
                                 <input type="number" name="edad" id="edad" 
                                         class="form-control @error('edad') is-invalid @enderror" 
-                                        value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="0" max="120">
+                                        value="{{ old('edad', $cita->triaje->edad ?? '') }}" required min="{{ config('services.ml.age_min', 21) }}" max="{{ config('services.ml.age_max', 81) }}">
+                                <small class="form-text text-muted">Las edades del conjunto de origen del modelo abarcan {{ config('services.ml.age_min', 21) }}–{{ config('services.ml.age_max', 81) }} años. Fuera de ese intervalo no se genera una estimación; esto no descarta diabetes y requiere evaluación clínica.</small>
                                 @error('edad')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -828,7 +829,10 @@
 
 <script>
     // Variable global para almacenar todas las citas con sus relaciones (triaje, paciente)
-    const allCitasData = <?php echo json_encode($citas ?? []); ?>;
+    const allCitasData = @js($citas ?? []);
+    const escapeHtmlForDisplay = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
 
     function cargarDatosTriaje(idCita) {
         const infoCitaDiv = document.getElementById('infoCita');
@@ -1025,9 +1029,9 @@
                     <div class="mb-3">
                         <h5 class="text-primary">
                             <i class="fas fa-user-md"></i> 
-                            Análisis Médico para: ${patientData.nombre}
+                            Análisis de apoyo para: ${escapeHtmlForDisplay(patientData.nombre)}
                         </h5>
-                        <small class="text-muted">Sexo: ${patientData.sexo}</small>
+                        <small class="text-muted">Sexo: ${escapeHtmlForDisplay(patientData.sexo)}</small>
                     </div>
                     ${genderNote}
                     <div class="analysis-content">
@@ -1045,7 +1049,7 @@
                 aiAnalysisContent.innerHTML = `
                     <div class="alert alert-danger" role="alert">
                         <i class="fas fa-exclamation-triangle"></i>
-                        Ocurrió un error al realizar el análisis con IA: ${error.message}. Por favor, revise los datos o inténtelo más tarde.
+                        Ocurrió un error al realizar el análisis con IA: ${escapeHtmlForDisplay(error.message)}. Por favor, revise los datos o inténtelo más tarde.
                     </div>
                 `;
                 aiAnalysisSection.style.display = 'block';
@@ -1154,7 +1158,7 @@
                 console.error('Error:', error);
                 predictionResultContent.innerHTML = `
                     <div class="alert alert-danger" role="alert">
-                        Ocurrió un error al realizar la predicción: ${error.message}. Por favor, revise los datos o inténtelo más tarde.
+                        Ocurrió un error al realizar la predicción: ${escapeHtmlForDisplay(error.message)}. Por favor, revise los datos o inténtelo más tarde.
                     </div>
                 `;
                 predictionResultSection.style.display = 'block';
