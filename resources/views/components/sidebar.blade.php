@@ -166,7 +166,7 @@
                     <ul class="menu-sub">
                         <li class="menu-item">
                             @if(Auth::user()->rol->idrol === 4 && Auth::user()->paciente)
-                                <a href="{{ route('pacientes.show', ['idpaciente' => Auth::user()->paciente->idpaciente]) }}" class="menu-link">
+                                <a href="{{ route('pacientes.show', Auth::user()->paciente->idpaciente) }}" class="menu-link">
                                     <div class="text-truncate">Mi Historial</div>
                                 </a>
                             @elseif(Auth::user()->rol->idrol === 1)

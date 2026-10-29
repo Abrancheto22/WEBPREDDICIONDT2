@@ -1,12 +1,15 @@
 <?php
 
-// 1. Preparar directorios de escritura temporales en /tmp para Vercel Serverless
+// Laravel debe escribir datos temporales en /tmp en funciones serverless.
+$storagePath = '/tmp/storage';
+$cachePath = '/tmp/bootstrap/cache';
+
 $storageDirs = [
-    '/tmp/storage/framework/views',
-    '/tmp/storage/framework/cache/data',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/logs',
-    '/tmp/bootstrap/cache'
+    $storagePath . '/framework/views',
+    $storagePath . '/framework/cache/data',
+    $storagePath . '/framework/sessions',
+    $storagePath . '/logs',
+    $cachePath,
 ];
 
 foreach ($storageDirs as $dir) {
@@ -15,9 +18,22 @@ foreach ($storageDirs as $dir) {
     }
 }
 
-// 2. Redirigir rutas de almacenamiento dinámico de Laravel hacia /tmp
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-putenv('APP_STORAGE=/tmp/storage');
+// Laravel reconoce estas variables al resolver sus rutas de storage/cache.
+$temporaryPaths = [
+    'LARAVEL_STORAGE_PATH' => $storagePath,
+    'VIEW_COMPILED_PATH' => $storagePath . '/framework/views',
+    'APP_CONFIG_CACHE' => $cachePath . '/config.php',
+    'APP_EVENTS_CACHE' => $cachePath . '/events.php',
+    'APP_PACKAGES_CACHE' => $cachePath . '/packages.php',
+    'APP_ROUTES_CACHE' => $cachePath . '/routes-v7.php',
+    'APP_SERVICES_CACHE' => $cachePath . '/services.php',
+];
 
-// 3. Cargar el frontend / backend de Laravel
+foreach ($temporaryPaths as $key => $value) {
+    putenv($key . '=' . $value);
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
+}
+
+// Cargar Laravel.
 require __DIR__ . '/../public/index.php';

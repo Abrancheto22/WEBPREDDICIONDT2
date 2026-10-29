@@ -307,7 +307,7 @@
         <div class="section ai-analysis">
             <h2>Análisis de Inteligencia Artificial</h2>
             <div class="ai-analysis-content">
-                {!! $prediccion->analisis_ia !!}
+                {{ strip_tags($prediccion->analisis_ia) }}
             </div>
         </div>
         @endif

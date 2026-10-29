@@ -55,7 +55,7 @@ class PacienteController extends Controller
             'direccion' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'iduser' => 'required|exists:users,id|unique:paciente,iduser',
+            'iduser' => 'required|exists:users,id,idrol,4|unique:paciente,iduser',
         ]);
 
         $paciente = new Paciente();
@@ -69,22 +69,7 @@ class PacienteController extends Controller
         $paciente->iduser = $request->iduser;
 
         if ($request->hasFile('imagen')) {
-            // Obtener el archivo
-            $file = $request->file('imagen');
-            
-            // Generar un nombre para la imagen
-            $nombreImagen = 'paciente_' . $file->getClientOriginalName();
-            $rutaImagen = public_path('images/pacientes/' . $nombreImagen);
-            
-            // Verificar si la imagen ya existe
-            if (file_exists($rutaImagen)) {
-                // Si existe, usar la ruta existente
-                $paciente->imagen = 'images/pacientes/' . $nombreImagen;
-            } else {
-                // Si no existe, mover la imagen
-                $path = $file->move(public_path('images/pacientes'), $nombreImagen);
-                $paciente->imagen = 'images/pacientes/' . $nombreImagen;
-            }
+            $paciente->imagen = $request->file('imagen')->store('images/pacientes', 'public');
         } else {
             // Asignar imagen por defecto si no se sube ninguna
             $paciente->imagen = 'plantilla/assets/img/avatars/default.webp';
@@ -99,10 +84,7 @@ class PacienteController extends Controller
     {
         $paciente = Paciente::with(['usuario', 'citas.triaje', 'citas.prediccion', 'citas.doctor.usuario'])->findOrFail($idpaciente);
 
-        // Asegurarse de que el paciente autenticado solo pueda ver su propio historial, a menos que sea admin
-        if (Auth::user()->rol->idrol === 4 && Auth::user()->paciente->idpaciente != $idpaciente) {
-            abort(403, 'Acceso no autorizado.');
-        }
+        $this->authorizePatientAccess($paciente);
 
         $predicciones = $paciente->citas->map(function ($cita) {
             return $cita->prediccion;
@@ -114,12 +96,13 @@ class PacienteController extends Controller
     public function edit($idpaciente)
     {
         $paciente = Paciente::findOrFail($idpaciente);
+        $this->authorizePatientAccess($paciente);
         
         // Filtrar usuarios que tienen el rol paciente (idrol = 4)
         // Incluimos el usuario actual del paciente
-        $usuarios = User::where('idrol', 4)
-            ->orWhere('id', $paciente->iduser)
-            ->get();
+        $usuarios = (int) Auth::user()->idrol === 1
+            ? User::where('idrol', 4)->orWhere('id', $paciente->iduser)->get()
+            : User::whereKey(Auth::id())->get();
         
         return view('pacientes.edit', compact('paciente', 'usuarios'));
     }
@@ -127,9 +110,11 @@ class PacienteController extends Controller
     public function update(Request $request, $idpaciente)
     {
         $paciente = Paciente::findOrFail($idpaciente);
+        $this->authorizePatientAccess($paciente);
+        $role = (int) Auth::user()->idrol;
 
-        $request->validate([
-            'DNI' => 'required|string|max:20|unique:paciente,dni,' . $idpaciente . ',idpaciente',
+        $rules = [
+            'DNI' => 'required|string|max:20|unique:paciente,DNI,' . $idpaciente . ',idpaciente',
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'sexo' => 'required|in:M,F',
@@ -137,35 +122,28 @@ class PacienteController extends Controller
             'direccion' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'iduser' => 'required|exists:users,id|unique:paciente,iduser,' . $idpaciente . ',idpaciente',
-        ]);
+        ];
+        if ($role === 1) {
+            $rules['iduser'] = 'required|exists:users,id,idrol,4|unique:paciente,iduser,' . $idpaciente . ',idpaciente';
+        }
+        $request->validate($rules);
 
-        $paciente->dni = $request->DNI;
+        $paciente->DNI = $request->DNI;
         $paciente->nombre = $request->nombre;
         $paciente->apellido = $request->apellido;
         $paciente->sexo = $request->sexo;
         $paciente->fecha_nacimiento = $request->fecha_nacimiento;
         $paciente->direccion = $request->direccion;
         $paciente->telefono = $request->telefono;
-        $paciente->iduser = $request->iduser;
+        if ($role === 1) {
+            $paciente->iduser = $request->iduser;
+        }
 
         if ($request->hasFile('imagen')) {
-            // Obtener el archivo
-            $file = $request->file('imagen');
-            
-            // Generar un nombre para la imagen
-            $nombreImagen = 'paciente_' . $file->getClientOriginalName();
-            $rutaImagen = public_path('images/pacientes/' . $nombreImagen);
-            
-            // Verificar si la imagen ya existe
-            if (file_exists($rutaImagen)) {
-                // Si existe, usar la ruta existente
-                $paciente->imagen = 'images/pacientes/' . $nombreImagen;
-            } else {
-                // Si no existe, mover la imagen
-                $path = $file->move(public_path('images/pacientes'), $nombreImagen);
-                $paciente->imagen = 'images/pacientes/' . $nombreImagen;
+            if ($paciente->imagen && Storage::disk('public')->exists($paciente->imagen)) {
+                Storage::disk('public')->delete($paciente->imagen);
             }
+            $paciente->imagen = $request->file('imagen')->store('images/pacientes', 'public');
         } elseif (empty($paciente->imagen)) {
             // Asignar imagen por defecto si no hay existente y no se sube nueva
             $paciente->imagen = 'plantilla/assets/img/avatars/default.webp';
@@ -245,5 +223,18 @@ class PacienteController extends Controller
             'citas' => $citas,
             'isAdminOrEnfermera' => $isAdminOrEnfermera,
         ]);
+    }
+
+    private function authorizePatientAccess(Paciente $paciente): void
+    {
+        $user = Auth::user();
+        abort_unless($user, 401);
+
+        if ((int) $user->idrol === 4) {
+            abort_unless((int) $paciente->iduser === (int) $user->id, 403, 'Acceso no autorizado.');
+            return;
+        }
+
+        abort_unless(in_array((int) $user->idrol, [1, 3], true), 403, 'Acceso no autorizado.');
     }
 }

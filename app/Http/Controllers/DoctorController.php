@@ -15,6 +15,7 @@ class DoctorController extends Controller
 {
     public function index()
     {
+        abort_unless((int) Auth::user()->idrol === 1, 403);
         $doctores = Doctor::with('usuario')
             ->get()
             ->map(function ($doctor) {
@@ -31,23 +32,38 @@ class DoctorController extends Controller
 
     public function create()
     {
-        // Filtrar usuarios que tienen el rol doctor (idrol = 2)
-        $usuarios = User::where('idrol', 2)->get();
+        $user = Auth::user();
+        if ((int) $user->idrol === 2) {
+            abort_if($user->doctor()->exists(), 403, 'La cuenta ya tiene un perfil médico.');
+            $usuarios = User::whereKey($user->id)->get();
+        } else {
+            abort_unless((int) $user->idrol === 1, 403);
+            $usuarios = User::where('idrol', 2)->get();
+        }
         return view('doctores.create', compact('usuarios'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $user = Auth::user();
+        abort_unless(in_array((int) $user->idrol, [1, 2], true), 403);
+        if ((int) $user->idrol === 2) {
+            abort_if($user->doctor()->exists(), 403, 'La cuenta ya tiene un perfil médico.');
+        }
+
+        $rules = [
             'DNI' => 'required|string|max:20|unique:doctor',
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'numero' => 'required|string|max:20',
             'especialidad' => 'required|string|max:100',
-            'sueldo' => 'required|numeric|min:0',
+            'sueldo' => (int) $user->idrol === 1 ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'iduser' => 'required|exists:users,id|unique:doctor,iduser',
-        ]);
+        ];
+        if ((int) $user->idrol === 1) {
+            $rules['iduser'] = 'required|exists:users,id,idrol,2|unique:doctor,iduser';
+        }
+        $request->validate($rules);
 
         $doctor = new Doctor();
         $doctor->DNI = $request->DNI;
@@ -55,42 +71,34 @@ class DoctorController extends Controller
         $doctor->apellido = $request->apellido;
         $doctor->numero = $request->numero;
         $doctor->especialidad = $request->especialidad;
-        $doctor->sueldo = $request->sueldo;
-        $doctor->iduser = $request->iduser;
+        if ((int) $user->idrol === 1) {
+            $doctor->sueldo = $request->sueldo;
+            $doctor->iduser = $request->iduser;
+        } else {
+            $doctor->iduser = $user->id;
+        }
 
         if ($request->hasFile('imagen')) {
-            // Obtener el archivo
-            $file = $request->file('imagen');
-            
-            // Generar un nombre para la imagen
-            $nombreImagen = 'doctor_' . $file->getClientOriginalName();
-            $rutaImagen = public_path('images/doctores/' . $nombreImagen);
-            
-            // Verificar si la imagen ya existe
-            if (file_exists($rutaImagen)) {
-                // Si existe, usar la ruta existente
-                $doctor->imagen = 'images/doctores/' . $nombreImagen;
-            } else {
-                // Si no existe, mover la imagen
-                $path = $file->move(public_path('images/doctores'), $nombreImagen);
-                $doctor->imagen = 'images/doctores/' . $nombreImagen;
-            }
+            $doctor->imagen = $request->file('imagen')->store('images/doctores', 'public');
         }
 
         $doctor->save();
 
-        return redirect()->route('doctores.index')->with('success', 'Doctor creado exitosamente');
+        return (int) $user->idrol === 2
+            ? redirect()->route('profile')->with('success', 'Perfil de doctor creado exitosamente')
+            : redirect()->route('doctores.index')->with('success', 'Doctor creado exitosamente');
     }
 
     public function edit($iddoctor)
     {
         $doctor = Doctor::findOrFail($iddoctor);
+        $this->authorizeDoctorAccess($doctor);
         
         // Filtrar usuarios que tienen el rol doctor (idrol = 2)
         // Incluimos el usuario actual del doctor
-        $usuarios = User::where('idrol', 2)
-            ->orWhere('id', $doctor->iduser)
-            ->get();
+        $usuarios = (int) Auth::user()->idrol === 1
+            ? User::where('idrol', 2)->orWhere('id', $doctor->iduser)->get()
+            : User::whereKey(Auth::id())->get();
         
         return view('doctores.edit', compact('doctor', 'usuarios'));
     }
@@ -98,55 +106,46 @@ class DoctorController extends Controller
     public function show($iddoctor)
     {
         $doctor = Doctor::with('usuario')->findOrFail($iddoctor);
+        $this->authorizeDoctorAccess($doctor);
         return view('doctores.show', compact('doctor'));
     }
 
     public function update(Request $request, $iddoctor)
     {
         $doctor = Doctor::findOrFail($iddoctor);
+        $this->authorizeDoctorAccess($doctor);
+        $user = Auth::user();
         
-        $request->validate([
+        $rules = [
             'DNI' => 'required|string|max:20|unique:doctor,DNI,' . $iddoctor . ',iddoctor',
             'nombre' => 'required|string|max:100',
             'apellido' => 'required|string|max:100',
             'numero' => 'required|string|max:20',
             'especialidad' => 'required|string|max:100',
-            'sueldo' => 'required|numeric|min:0',
+            'sueldo' => (int) $user->idrol === 1 ? 'required|numeric|min:0' : 'nullable|numeric|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'iduser' => 'required|exists:users,id|unique:doctor,iduser,' . $iddoctor . ',iddoctor',
-        ]);
+        ];
+        if ((int) $user->idrol === 1) {
+            $rules['iduser'] = 'required|exists:users,id,idrol,2|unique:doctor,iduser,' . $iddoctor . ',iddoctor';
+        }
+        $request->validate($rules);
 
         $doctor->DNI = $request->DNI;
         $doctor->nombre = $request->nombre;
         $doctor->apellido = $request->apellido;
         $doctor->numero = $request->numero;
         $doctor->especialidad = $request->especialidad;
-        $doctor->sueldo = $request->sueldo;
-        $doctor->iduser = $request->iduser;
+        if ((int) $user->idrol === 1) {
+            $doctor->sueldo = $request->sueldo;
+            $doctor->iduser = $request->iduser;
+        }
 
         // Manejo de la imagen
         if ($request->hasFile('imagen')) {
-            // Obtener el archivo
-            $file = $request->file('imagen');
-            
-            // Generar un nombre para la imagen
-            $nombreImagen = 'doctor_' . $file->getClientOriginalName();
-            $rutaImagen = public_path('images/doctores/' . $nombreImagen);
-            
-            // Verificar si la imagen ya existe
-            if (file_exists($rutaImagen)) {
-                // Si existe, usar la ruta existente
-                $doctor->imagen = 'images/doctores/' . $nombreImagen;
-            } else {
-                // Si no existe, mover la imagen
-                // Primero eliminar la imagen anterior si existe
-                if ($doctor->imagen && Storage::disk('public')->exists($doctor->imagen)) {
-                    Storage::disk('public')->delete($doctor->imagen);
-                }
-                
-                $path = $file->move(public_path('images/doctores'), $nombreImagen);
-                $doctor->imagen = 'images/doctores/' . $nombreImagen;
+            if ($doctor->imagen && Storage::disk('public')->exists($doctor->imagen)) {
+                Storage::disk('public')->delete($doctor->imagen);
             }
+            $doctor->imagen = $request->file('imagen')->store('images/doctores', 'public');
         }
 
         $doctor->save();
@@ -163,6 +162,7 @@ class DoctorController extends Controller
 
     public function destroy($iddoctor)
     {
+        abort_unless((int) Auth::user()->idrol === 1, 403);
         $doctor = Doctor::findOrFail($iddoctor);
         if ($doctor->imagen) {
             Storage::disk('public')->delete($doctor->imagen);
@@ -173,6 +173,7 @@ class DoctorController extends Controller
 
     public function costos()
     {
+        abort_unless((int) Auth::user()->idrol === 1, 403);
         $doctores = Doctor::select('iddoctor','nombre','apellido','sueldo')
             ->with('usuario')
             ->get();
@@ -242,6 +243,20 @@ class DoctorController extends Controller
                 'threshold' => $threshold,
             ],
         ]);
+    }
+
+    private function authorizeDoctorAccess(Doctor $doctor): void
+    {
+        $user = Auth::user();
+        abort_unless($user, 401);
+        if ((int) $user->idrol === 1) {
+            return;
+        }
+        abort_unless(
+            (int) $user->idrol === 2 && (int) $doctor->iduser === (int) $user->id,
+            403,
+            'No tiene permisos sobre este perfil médico.'
+        );
     }
 
     public function exportCostos()

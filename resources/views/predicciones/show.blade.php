@@ -372,7 +372,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="ai-analysis-content">
-                                    {!! $prediccion->analisis_ia !!}
+                                    {{ strip_tags($prediccion->analisis_ia) }}
                                 </div>
                             </div>
                             <div class="card-footer bg-light">

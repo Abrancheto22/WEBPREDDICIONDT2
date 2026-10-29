@@ -507,7 +507,8 @@
                             </label>
                             <input type="number" name="edad" id="edad"
                                    class="form-control @error('edad') is-invalid @enderror"
-                                   value="{{ old('edad', $prediccion->edad) }}" required min="0">
+                                   value="{{ old('edad', $prediccion->edad) }}" required min="{{ config('services.ml.age_min', 21) }}" max="{{ config('services.ml.age_max', 81) }}">
+                            <small class="form-text text-muted">Las edades del conjunto de origen del modelo abarcan {{ config('services.ml.age_min', 21) }}–{{ config('services.ml.age_max', 81) }} años. Fuera de ese intervalo no se genera una estimación; esto no descarta diabetes y requiere evaluación clínica.</small>
                             @error('edad')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -657,6 +658,10 @@
 </div>
 
 <script>
+    const escapeHtmlForDisplay = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+
     document.addEventListener('DOMContentLoaded', function() {
         // --- Elementos DOM ---
         const form = document.getElementById('predictionForm');
@@ -836,7 +841,7 @@
                 console.error('Error:', error);
                 predictionResultContent.innerHTML = `
                     <div class="alert alert-danger" role="alert">
-                        Ocurrió un error al realizar la operación: ${error.message}. Por favor, revise la consola para más detalles.
+                        Ocurrió un error al realizar la operación: ${escapeHtmlForDisplay(error.message)}. Por favor, revise la consola para más detalles.
                     </div>
                 `;
                 predictionResultSection.style.display = 'block';
@@ -888,7 +893,7 @@
                         <div class="card-body p-2 d-flex align-items-center">
                             <i class="bx ${iconClass} me-2" style="font-size: 1.5rem;"></i>
                             <div class="flex-grow-1 me-2">
-                                <small class="text-muted d-block">${file.name}</small>
+                                <small class="text-muted d-block">${escapeHtmlForDisplay(file.name)}</small>
                                 <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
                             </div>
                             <button type="button" class="btn btn-outline-danger btn-sm" 
