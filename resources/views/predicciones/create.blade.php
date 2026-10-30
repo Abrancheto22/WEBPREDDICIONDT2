@@ -785,6 +785,10 @@
             // Recopilar datos del formulario incluyendo archivos adjuntos
             const formData = new FormData(predictionForm);
             formData.set('embarazos', document.getElementById('embarazos').value);
+            const probInput = document.getElementById('save_probability_diabetes');
+            if (probInput && probInput.value) {
+                formData.set('resultado_prediccion', probInput.value);
+            }
 
             try {
                 const response = await fetch('{{ route("predicciones.analyze_gemini") }}', {

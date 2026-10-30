@@ -163,6 +163,7 @@ class PrediccionController extends Controller
                 'observacion' => 'nullable|string|max:5000',
                 'documentos_adjuntos' => 'nullable|array|max:5',
                 'documentos_adjuntos.*' => 'file|mimes:pdf,docx,jpg,png|max:10240', // 10MB por archivo
+                'resultado_prediccion' => 'nullable|numeric|min:0|max:1',
             ]);
 
             // Manejo de archivos adjuntos
@@ -195,8 +196,13 @@ class PrediccionController extends Controller
             }
 
             // Verificar si ya existe una predicción para obtener el resultado
-            $prediccionExistente = Prediccion::where('idcita', $validated['idcita'])->first();
-            $resultadoPrediccion = $prediccionExistente ? $prediccionExistente->resultado : null;
+            $resultadoPrediccion = null;
+            if (isset($validated['resultado_prediccion']) && is_numeric($validated['resultado_prediccion'])) {
+                $resultadoPrediccion = (float) $validated['resultado_prediccion'];
+            } else {
+                $prediccionExistente = Prediccion::where('idcita', $validated['idcita'])->first();
+                $resultadoPrediccion = $prediccionExistente ? $prediccionExistente->resultado : null;
+            }
 
             // Recuperar los archivos adjuntos de la sesión
             $attachmentPaths = Session::get('uploaded_attachment_paths', []);
@@ -361,10 +367,14 @@ class PrediccionController extends Controller
         $prediccionInfo = "";
         if ($prediccionResultado !== null) {
             $probabilidad = round($prediccionResultado * 100, 2);
-            $diagnostico = $prediccionResultado >= 0.5 ? 'POSITIVO para Diabetes Tipo 2' : 'NEGATIVO para Diabetes Tipo 2';
+            $diagnostico = $prediccionResultado >= 0.5 ? 'POSITIVO / ALTO RIESGO para Diabetes Tipo 2' : 'NEGATIVO / BAJO RIESGO para Diabetes Tipo 2';
             $riesgo = $this->calculateRiskLevel($prediccionResultado);
             
-            $prediccionInfo = "\n\n**RESULTADO DE LA PREDICCIÓN DE IA:**\n- Diagnóstico: {$diagnostico}\n- Probabilidad: {$probabilidad}%\n- Nivel de Riesgo: {$riesgo['nivel']}\n- Descripción del Riesgo: {$riesgo['descripcion']}";
+            $prediccionInfo = "\n\n**RESULTADO DEL MODELO PREDICTIVO (MACHINE LEARNING):**\n" .
+                "- Diagnóstico Estimado: {$diagnostico}\n" .
+                "- Probabilidad Calculada: {$probabilidad}%\n" .
+                "- Nivel de Riesgo del Algoritmo: {$riesgo['nivel']}\n" .
+                "- Contexto del Riesgo: {$riesgo['descripcion']}";
         }
 
         // Mejorar la presentación de las observaciones
@@ -372,25 +382,36 @@ class PrediccionController extends Controller
             ? "\n**OBSERVACIONES MÉDICAS DEL PROFESIONAL:**\n{$data['observacion']}" 
             : "";
 
-        $prompt = "Eres un asistente médico experto en diabetes tipo 2. Analiza la siguiente información del paciente y los documentos adjuntos (si los hay) para proporcionar un análisis detallado, estratificación de riesgo, interpretación de resultados, recomendaciones y un plan terapéutico integral. Considera toda la información clínica proporcionada para tu análisis.\n\n" .
-            "**INFORMACIÓN DEL PACIENTE:**\n" .
+        $prompt = "Eres un médico especialista en endocrinología y diabetes. Tu función es formular un PLAN DE TRATAMIENTO INTEGRAL Y RECOMENDACIONES CLÍNICAS personalizadas para el paciente.\n\n" .
+            "**DIRECTRICES OBLIGATORIAS:**\n" .
+            "- NO interpretes, ni describas, ni desgloses uno por uno los parámetros clínicos del paciente (no expliques qué significa cada valor de glucosa, IMC, presión arterial, etc.).\n" .
+            "- Utiliza los datos clínicos del paciente y el resultado de la predicción de IA directamente como sustento clínico para elaborar el plan de tratamiento y las recomendaciones terapéuticas.\n\n" .
+            "**DATOS CLÍNICOS DEL PACIENTE:**\n" .
             "- Nombre: {$paciente->nombre} {$paciente->apellido}\n" .
             "- Sexo: {$paciente->sexo}\n" .
-            "- Edad: {$data['edad']}\n" .
+            "- Edad: {$data['edad']} años\n" .
             "- Número de Embarazos: {$embarazos}{$sexoInfo}\n" .
             "- Glucosa: {$data['glucosa']} mg/dL\n" .
             "- Presión Sanguínea: {$data['presion_sanguinea']} mmHg\n" .
             "- Grosor de la Piel: {$data['grosor_piel']} mm\n" .
             "- Insulina: {$data['insulina']} muU/ml\n" .
-            "- IMC: {$data['BMI']}\n" .
+            "- IMC: {$data['BMI']} kg/m²\n" .
             "- Función Pedigree de Diabetes: {$data['pedigree']}\n" .
             $prediccionInfo .
             $observacionesInfo .
-            "\n\n**REGLAS DE FORMATO:**\n" .
+            "\n\n**ESTRUCTURA DE TU RESPUESTA (Enfocada en Tratamiento y Recomendaciones):**\n" .
+            "1. **Plan de Tratamiento Terapéutico:**\n" .
+            "   - **Tratamiento no farmacológico:** Plan de estilo de vida, prescripción de cambios nutricionales específicos, pautas de ejercicio físico adaptadas al perfil cardiovascular/metabólico del paciente y metas de reducción de peso/grasa corporal.\n" .
+            "   - **Consideraciones de tratamiento médico / farmacológico:** Opciones terapéuticas y farmacológicas sugeridas de acuerdo con los estándares de atención médica (ADA) según el diagnóstico, la probabilidad del modelo y el perfil glucémico/insulínico.\n" .
+            "2. **Recomendaciones Clínicas y Monitoreo:**\n" .
+            "   - Exámenes de laboratorio complementarios prioritarios (ej. Hemoglobina Glicosilada HbA1c, perfil lipídico, función renal).\n" .
+            "   - Pautas para el autocontrol y monitoreo de glucemia capilar y presión arterial.\n" .
+            "   - Signos de alarma (síntomas de hiperglucemia/hipoglucemia) y periodicidad de seguimiento médico.\n\n" .
+            "**REGLAS DE FORMATO:**\n" .
             "- NO uses símbolos ni fórmulas en formato LaTeX (NUNCA uses signos de dólar '$', ni '\\ge', '\\le', '\\text{}', '\\mu').\n" .
             "- Usa siempre símbolos médicos y numéricos limpios: '≥', '≤', '>', '<', 'µU/ml', 'mg/dL', 'mmHg', 'kg/m²'.\n" .
-            "- Estructura tu respuesta directamente con los parámetros clínicos, interpretación, estratificación de riesgo y recomendaciones terapéuticas.\n" .
-            "- NO incluyas bajo ninguna circunstancia bloques ni secciones de advertencia clínica sobre discrepancias con predicciones ni críticas de algoritmos.";
+            "- Ve directo al tratamiento y recomendaciones, con redacción médica profesional, clara y estructurada en viñetas legibles.\n" .
+            "- NO incluyas bloques ni secciones de advertencia clínica sobre discrepancias con predicciones ni críticas de algoritmos.";
 
         return $prompt;
     }
