@@ -382,10 +382,12 @@ class PrediccionController extends Controller
             ? "\n**OBSERVACIONES MÉDICAS DEL PROFESIONAL:**\n{$data['observacion']}" 
             : "";
 
-        $prompt = "Eres un médico especialista en endocrinología y diabetes. Tu función es formular un PLAN DE TRATAMIENTO INTEGRAL Y RECOMENDACIONES CLÍNICAS personalizadas para el paciente.\n\n" .
+        $prompt = "Eres un médico especialista en endocrinología y prevención de diabetes tipo 2. Tu misión es generar un INFORME CLÍNICO ESTRUCTURADO EN SECCIONES enfocado en RECOMENDACIONES DE TRATAMIENTO, CÓMO EVITAR LA DIABETES Y CÓMO BAJAR EL PORCENTAJE DE PROBABILIDAD DEL PACIENTE, tomando en cuenta sus variables clínicas y el porcentaje de probabilidad del modelo.\n\n" .
             "**DIRECTRICES OBLIGATORIAS:**\n" .
-            "- NO interpretes, ni describas, ni desgloses uno por uno los parámetros clínicos del paciente (no expliques qué significa cada valor de glucosa, IMC, presión arterial, etc.).\n" .
-            "- Utiliza los datos clínicos del paciente y el resultado de la predicción de IA directamente como sustento clínico para elaborar el plan de tratamiento y las recomendaciones terapéuticas.\n\n" .
+            "- NO interpretes, ni describas, ni repitas uno por uno los parámetros del paciente como si fuera un listado de laboratorio.\n" .
+            "- NO presentes la información como un solo bloque o párrafo largo de texto continuo.\n" .
+            "- Es obligatorio organizar tu respuesta en las 4 secciones numeradas indicadas a continuación, utilizando encabezados Markdown con triple almohadilla (###) y viñetas concisas (-).\n" .
+            "- Todas las recomendaciones deben estar directamente fundamentadas en sus datos particulares (edad, IMC, glucosa, insulina, presión, antecedentes) y en su porcentaje calculado de diabetes.\n\n" .
             "**DATOS CLÍNICOS DEL PACIENTE:**\n" .
             "- Nombre: {$paciente->nombre} {$paciente->apellido}\n" .
             "- Sexo: {$paciente->sexo}\n" .
@@ -399,18 +401,26 @@ class PrediccionController extends Controller
             "- Función Pedigree de Diabetes: {$data['pedigree']}\n" .
             $prediccionInfo .
             $observacionesInfo .
-            "\n\n**ESTRUCTURA DE TU RESPUESTA (Enfocada en Tratamiento y Recomendaciones):**\n" .
-            "1. **Plan de Tratamiento Terapéutico:**\n" .
-            "   - **Tratamiento no farmacológico:** Plan de estilo de vida, prescripción de cambios nutricionales específicos, pautas de ejercicio físico adaptadas al perfil cardiovascular/metabólico del paciente y metas de reducción de peso/grasa corporal.\n" .
-            "   - **Consideraciones de tratamiento médico / farmacológico:** Opciones terapéuticas y farmacológicas sugeridas de acuerdo con los estándares de atención médica (ADA) según el diagnóstico, la probabilidad del modelo y el perfil glucémico/insulínico.\n" .
-            "2. **Recomendaciones Clínicas y Monitoreo:**\n" .
-            "   - Exámenes de laboratorio complementarios prioritarios (ej. Hemoglobina Glicosilada HbA1c, perfil lipídico, función renal).\n" .
-            "   - Pautas para el autocontrol y monitoreo de glucemia capilar y presión arterial.\n" .
-            "   - Signos de alarma (síntomas de hiperglucemia/hipoglucemia) y periodicidad de seguimiento médico.\n\n" .
+            "\n\n**ESTRUCTURA EXACTA DE LAS SECCIONES QUE DEBES GENERAR:**\n\n" .
+            "### 1. Recomendaciones de Tratamiento Médico y Terapéutico\n" .
+            "- **Tratamiento No Farmacológico (Base Principal):** Pautas nutricionales concretas basadas en su IMC y glucosa, junto con un plan de actividad física adecuado a su edad y estado cardiovascular.\n" .
+            "- **Consideraciones de Tratamiento Médico:** Opciones terapéuticas orientativas basadas en guías clínicas (ADA) alineadas con el porcentaje de riesgo y el estado de resistencia a la insulina.\n\n" .
+            "### 2. Estrategias Clave para Evitar la Diabetes\n" .
+            "- **Control Directo de Factores de Riesgo:** Medidas prioritarias según los parámetros más alterados del paciente (ej. reducción de adiposidad visceral, normalización de presión arterial o manejo de antecedentes familiares).\n" .
+            "- **Nutrición Preventiva Personalizada:** Alimentos a priorizar (ricos en fibra, proteínas magras) y alimentos a eliminar (ultraprocesados, azúcares simples, harinas refinadas).\n" .
+            "- **Hábitos de Vida Protectores:** Higiene del sueño, hidratación óptima y manejo activo del estrés para mitigar la secreción de cortisol.\n\n" .
+            "### 3. Plan de Acción para Bajar el Porcentaje de Probabilidad\n" .
+            "- **Metas Cuantificables de Reducción:** Metas específicas de reducción de peso (ej. descenso del 5% al 7% del peso corporal) y meta de glucosa en ayunas (< 100 mg/dL).\n" .
+            "- **Variable de Mayor Impacto Inmediato:** Cuál de sus parámetros clínicos (glucosa, IMC, presión, insulina) debe atacarse con mayor urgencia para conseguir la mayor caída en la probabilidad de diabetes.\n" .
+            "- **Proyección de Mejora del Riesgo:** Explicación motivadora de cómo el cumplimiento sostenido de estas pautas reduce drásticamente el porcentaje de probabilidad predictivo a niveles seguros.\n\n" .
+            "### 4. Monitoreo y Seguimiento Clínico\n" .
+            "- **Exámenes Complementarios Sugeridos:** Pruebas prioritarias recomendadas (ej. Hemoglobina Glicosilada HbA1c, perfil lipídico completo, microalbuminuria).\n" .
+            "- **Frecuencia de Monitoreo:** Pautas para el autocontrol de glucemia capilar y tomas de presión arterial.\n" .
+            "- **Signos de Alarma y Periodicidad de Controles:** Cuándo acudir a urgencias médicas y cada cuánto tiempo programar su reevaluación médica.\n\n" .
             "**REGLAS DE FORMATO:**\n" .
             "- NO uses símbolos ni fórmulas en formato LaTeX (NUNCA uses signos de dólar '$', ni '\\ge', '\\le', '\\text{}', '\\mu').\n" .
             "- Usa siempre símbolos médicos y numéricos limpios: '≥', '≤', '>', '<', 'µU/ml', 'mg/dL', 'mmHg', 'kg/m²'.\n" .
-            "- Ve directo al tratamiento y recomendaciones, con redacción médica profesional, clara y estructurada en viñetas legibles.\n" .
+            "- Mantén la separación estricta entre secciones para que la interfaz web las renderice de forma limpia y ordenada.\n" .
             "- NO incluyas bloques ni secciones de advertencia clínica sobre discrepancias con predicciones ni críticas de algoritmos.";
 
         return $prompt;
@@ -976,8 +986,14 @@ class PrediccionController extends Controller
                 $icon = 'fa-stethoscope';
                 if (stripos($title, 'parámetro') !== false || stripos($title, 'laboratorio') !== false) {
                     $icon = 'fa-flask';
-                } elseif (stripos($title, 'recomend') !== false || stripos($title, 'plan') !== false || stripos($title, 'terap') !== false) {
-                    $icon = 'fa-pills';
+                } elseif (stripos($title, 'evitar') !== false || stripos($title, 'prevenc') !== false) {
+                    $icon = 'fa-shield-heart';
+                } elseif (stripos($title, 'bajar') !== false || stripos($title, 'reduc') !== false || stripos($title, 'porcent') !== false || stripos($title, 'probabil') !== false) {
+                    $icon = 'fa-arrow-trend-down';
+                } elseif (stripos($title, 'recomend') !== false || stripos($title, 'plan') !== false || stripos($title, 'terap') !== false || stripos($title, 'tratam') !== false) {
+                    $icon = 'fa-notes-medical';
+                } elseif (stripos($title, 'monitoreo') !== false || stripos($title, 'seguimiento') !== false) {
+                    $icon = 'fa-heart-pulse';
                 } elseif (stripos($title, 'riesgo') !== false || stripos($title, 'estratific') !== false) {
                     $icon = 'fa-chart-pie';
                 }
