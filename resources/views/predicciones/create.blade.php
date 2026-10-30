@@ -134,9 +134,18 @@
                                     <i class="fas fa-baby me-2 text-info"></i>
                                     Número de Embarazos
                                 </label>
+                                @php
+                                    $sexoActual = $cita?->paciente?->sexo ?? '';
+                                    $esMasculinoInicial = in_array(strtoupper(trim($sexoActual)), ['M', 'MASCULINO']);
+                                    $embarazosInicial = $esMasculinoInicial ? 0 : old('embarazos', $cita->triaje->embarazos ?? '');
+                                @endphp
                                 <input type="number" name="embarazos" id="embarazos" 
                                         class="form-control @error('embarazos') is-invalid @enderror" 
-                                        value="{{ old('embarazos', $cita->triaje->embarazos ?? '') }}" required min="0" max="20">
+                                        value="{{ $embarazosInicial }}" required min="0" max="20"
+                                        @if($esMasculinoInicial) readonly style="background-color: #e9ecef; cursor: not-allowed;" @endif>
+                                <small id="notaEmbarazos" class="text-muted mt-1" style="{{ $esMasculinoInicial ? 'display:block;' : 'display:none;' }}">
+                                    <i class="fas fa-info-circle me-1 text-info"></i>Fijado en 0 por ser paciente masculino.
+                                </small>
                                 @error('embarazos')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -601,6 +610,31 @@
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[char]);
 
+    function actualizarEstadoEmbarazos(sexo, valorTriaje) {
+        const inputEmbarazos = document.getElementById('embarazos');
+        const notaEmbarazos = document.getElementById('notaEmbarazos');
+        const s = String(sexo || '').trim().toUpperCase();
+        const esMasculino = (s === 'M' || s === 'MASCULINO');
+
+        if (esMasculino) {
+            inputEmbarazos.value = 0;
+            inputEmbarazos.readOnly = true;
+            inputEmbarazos.style.backgroundColor = '#e9ecef';
+            inputEmbarazos.style.cursor = 'not-allowed';
+            if (notaEmbarazos) {
+                notaEmbarazos.style.display = 'block';
+            }
+        } else {
+            inputEmbarazos.readOnly = false;
+            inputEmbarazos.style.backgroundColor = '';
+            inputEmbarazos.style.cursor = '';
+            inputEmbarazos.value = (valorTriaje !== undefined && valorTriaje !== null && valorTriaje !== '') ? valorTriaje : '';
+            if (notaEmbarazos) {
+                notaEmbarazos.style.display = 'none';
+            }
+        }
+    }
+
     function cargarDatosTriaje(idCita) {
         const infoCitaDiv = document.getElementById('infoCita');
         const alertaSinTriaje = document.getElementById('alertaSinTriaje');
@@ -608,8 +642,8 @@
         if (!idCita) {
             infoCitaDiv.style.display = 'none';
             alertaSinTriaje.style.display = 'none';
+            actualizarEstadoEmbarazos('', '');
             // Limpiar todos los campos de predicción
-            document.getElementById('embarazos').value = '';
             document.getElementById('glucosa').value = '';
             document.getElementById('presion_sanguinea').value = '';
             document.getElementById('grosor_piel').value = '';
@@ -633,9 +667,11 @@
             document.getElementById('infoCitaFecha').textContent = citaSeleccionada.fecha_cita || '-';
             document.getElementById('infoCitaHora').textContent = citaSeleccionada.hora_cita ? citaSeleccionada.hora_cita.substring(0, 5) : '-'; 
 
+            const sexoPaciente = citaSeleccionada.paciente ? citaSeleccionada.paciente.sexo : '';
+
             if (citaSeleccionada.triaje) {
                 alertaSinTriaje.style.display = 'none';
-                document.getElementById('embarazos').value = citaSeleccionada.triaje.embarazos || '';
+                actualizarEstadoEmbarazos(sexoPaciente, citaSeleccionada.triaje.embarazos);
                 document.getElementById('glucosa').value = citaSeleccionada.triaje.glucosa || '';
                 document.getElementById('presion_sanguinea').value = citaSeleccionada.triaje.presion_sanguinea || '';
                 document.getElementById('grosor_piel').value = citaSeleccionada.triaje.grosor_piel || '';
@@ -645,8 +681,8 @@
                 document.getElementById('edad').value = citaSeleccionada.triaje.edad || '';
             } else {
                 alertaSinTriaje.style.display = 'block';
+                actualizarEstadoEmbarazos(sexoPaciente, '');
                 // Limpiar campos si no hay triaje
-                document.getElementById('embarazos').value = '';
                 document.getElementById('glucosa').value = '';
                 document.getElementById('presion_sanguinea').value = '';
                 document.getElementById('grosor_piel').value = '';
@@ -658,8 +694,8 @@
         } else {
             infoCitaDiv.style.display = 'none';
             alertaSinTriaje.style.display = 'none';
+            actualizarEstadoEmbarazos('', '');
             // Limpiar todos los campos de predicción si la cita no se encuentra
-            document.getElementById('embarazos').value = '';
             document.getElementById('glucosa').value = '';
             document.getElementById('presion_sanguinea').value = '';
             document.getElementById('grosor_piel').value = '';
@@ -677,8 +713,12 @@
     // Inicializar al cargar la página si ya hay una cita seleccionada (ej. por URL)
     document.addEventListener('DOMContentLoaded', function() {
         const selectCita = document.getElementById('idcita');
-        if (selectCita.value) {
+        if (selectCita && selectCita.value) {
             cargarDatosTriaje(selectCita.value);
+        } else {
+            @if(isset($cita) && $cita && $cita->paciente)
+                actualizarEstadoEmbarazos('{{ $cita->paciente->sexo }}', '{{ $cita->triaje->embarazos ?? '' }}');
+            @endif
         }
 
         // --- Lógica AJAX para la predicción ---
@@ -744,6 +784,7 @@
 
             // Recopilar datos del formulario incluyendo archivos adjuntos
             const formData = new FormData(predictionForm);
+            formData.set('embarazos', document.getElementById('embarazos').value);
 
             try {
                 const response = await fetch('{{ route("predicciones.analyze_gemini") }}', {
@@ -784,7 +825,8 @@
                 analysis = analysis.replace(/^[¡!]?\s*ADVERTENCIA\s+CL[IÍ]NICA[^\n<]*/gim, '');
 
                 let genderNote = '';
-                if (patientData.sexo === 'Masculino' && patientData.embarazos_originales > 0) {
+                const esMascAnalisis = ['M', 'MASCULINO'].includes(String(patientData.sexo || '').trim().toUpperCase());
+                if (esMascAnalisis && patientData.embarazos_originales > 0) {
                     genderNote = `<div class="alert alert-info mt-3 mb-3 border-0 shadow-sm d-flex align-items-center">
                         <i class="fas fa-info-circle fs-4 me-3 text-info"></i> 
                         <div>
@@ -879,6 +921,7 @@
             for (let [key, value] of formData.entries()) {
                 data[key] = value;
             }
+            data['embarazos'] = document.getElementById('embarazos').value;
 
             try {
                 const response = await fetch(predictionForm.action, {

@@ -189,7 +189,8 @@ class PrediccionController extends Controller
             
             // Ajustar embarazos según el género del paciente
             $embarazos = $validated['embarazos'];
-            if ($paciente->sexo === 'Masculino' && $embarazos > 0) {
+            $esMasculino = in_array(strtoupper(trim((string) $paciente->sexo)), ['M', 'MASCULINO']);
+            if ($esMasculino && $embarazos > 0) {
                 $embarazos = 0; // Los hombres no pueden tener embarazos
             }
 
@@ -351,7 +352,8 @@ class PrediccionController extends Controller
 
     private function buildGeminiPrompt($data, $paciente, $embarazos, $prediccionResultado = null, $attachmentPaths = [])
     {
-        $sexoInfo = $paciente->sexo === 'Masculino' && $data['embarazos'] > 0 
+        $esMasculino = in_array(strtoupper(trim((string) $paciente->sexo)), ['M', 'MASCULINO']);
+        $sexoInfo = $esMasculino && $data['embarazos'] > 0 
             ? " (Nota: El paciente es masculino, por lo que el número de embarazos se ajustó a 0 para el análisis)" 
             : "";
 
