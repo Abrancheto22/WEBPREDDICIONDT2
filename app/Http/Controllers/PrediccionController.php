@@ -1045,12 +1045,11 @@ class PrediccionController extends Controller
 
     public function sendEmail(Request $request, $idprediccion)
     {
-        $prediccion = Prediccion::with(['cita.paciente', 'cita.doctor', 'cita.enfermera'])->findOrFail($idprediccion);
+        $prediccion = Prediccion::with(['cita.paciente.usuario', 'cita.doctor', 'cita.enfermera'])->findOrFail($idprediccion);
         $this->authorizeAppointment($prediccion->cita);
-        $patientEmail = $prediccion->cita->paciente?->usuario?->email;
-        abort_unless($patientEmail, 422, 'El paciente no tiene un correo registrado.');
+
         $request->validate([
-            'email' => ['required', 'email', \Illuminate\Validation\Rule::in([$patientEmail])],
+            'email' => 'required|email',
         ]);
 
         $pdf = DomPDF::loadView('predicciones.pdf', compact('prediccion'));
@@ -1064,10 +1063,10 @@ class PrediccionController extends Controller
                         ]);
             });
 
-            return redirect()->back()->with('success', 'Reporte enviado por correo electrónico exitosamente.');
+            return redirect()->back()->with('success', 'Reporte enviado por correo electrónico exitosamente a ' . $request->email . '.');
         } catch (\Exception $e) {
-            Log::warning('No se pudo enviar el reporte por correo.', ['exception' => get_class($e)]);
-            return redirect()->back()->with('error', 'No se pudo enviar el reporte por correo.');
+            Log::warning('No se pudo enviar el reporte por correo.', ['exception' => get_class($e), 'message' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'No se pudo enviar el reporte por correo: ' . $e->getMessage());
         }
     }
 }

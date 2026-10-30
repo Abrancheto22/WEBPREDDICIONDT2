@@ -264,6 +264,16 @@
                         </div>
                     @endif
 
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <div class="mb-4">
                         <h5 class="mb-3">Información de la Cita</h5>
                         <div class="row">
@@ -445,7 +455,7 @@
                         <form action="{{ route('predicciones.sendEmail', $prediccion->idprediccion) }}" method="POST">
                             @csrf
                             <div class="input-group mb-3">
-                                <input type="email" name="email" class="form-control" placeholder="Correo electrónico del destinatario" required>
+                                <input type="email" name="email" class="form-control" placeholder="Correo electrónico del destinatario" value="{{ old('email', $prediccion->cita->paciente?->usuario?->email) }}" required>
                                 <button class="btn btn-primary" type="submit">
                                     <i class="bx bx-envelope me-1"></i> Enviar por Correo
                                 </button>
