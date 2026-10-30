@@ -10,12 +10,19 @@
   },
   "routes": [
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/build/(.*)",
-      "dest": "/public/build/$1"
+      "dest": "/build/$1"
+    },
+    {
+      "src": "/plantilla/(.*)",
+      "dest": "/plantilla/$1"
     },
     {
       "src": "/(css|js|images|vendor|favicon.ico|robots.txt)(.*)",
-      "dest": "/public/$1$2"
+      "dest": "/$1$2"
     },
     {
       "src": "/(.*)",
