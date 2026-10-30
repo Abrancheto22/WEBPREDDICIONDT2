@@ -136,10 +136,12 @@ class PrediccionController extends Controller
         } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
             throw $e;
         } catch (\Exception $e) {
-            Log::error('Error inesperado al procesar la predicción.', ['exception' => get_class($e)]);
+            Log::error('Error inesperado al procesar la predicción.', ['exception' => get_class($e), 'message' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'error' => 'Ocurrió un error inesperado al procesar la predicción. Por favor, inténtelo de nuevo.',
+                'error' => config('app.debug')
+                    ? 'Error: ' . $e->getMessage()
+                    : 'Ocurrió un error inesperado al procesar la predicción. Por favor, inténtelo de nuevo.',
             ], 500);
         }
     }
@@ -803,12 +805,14 @@ class PrediccionController extends Controller
         if (!is_string($endpoint) || !filter_var($endpoint, FILTER_VALIDATE_URL) || !str_starts_with($endpoint, 'https://')) {
             throw new \RuntimeException('El endpoint HTTPS del modelo no está configurado.');
         }
+
         $apiKey = config('services.ml.api_key');
-        if (!is_string($apiKey) || strlen($apiKey) < 32) {
-            throw new \RuntimeException('La clave compartida del servicio ML no está configurada de forma segura.');
+        $requestHttp = Http::asJson()->acceptJson()->connectTimeout(5)->timeout(20);
+        if (is_string($apiKey) && strlen(trim($apiKey)) >= 32) {
+            $requestHttp = $requestHttp->withToken(trim($apiKey));
         }
 
-        $response = Http::asJson()->acceptJson()->withToken($apiKey)->connectTimeout(3)->timeout(15)->post($endpoint, [
+        $response = $requestHttp->post($endpoint, [
             'Pregnancies' => (float) $data['embarazos'],
             'Glucose' => (float) $data['glucosa'],
             'BloodPressure' => (float) $data['presion_sanguinea'],
