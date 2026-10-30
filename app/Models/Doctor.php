@@ -29,6 +29,20 @@ class Doctor extends Model
         'updated_at'
     ];
 
+    protected $appends = [
+        'dni'
+    ];
+
+    public function getDniAttribute()
+    {
+        return $this->attributes['DNI'] ?? $this->attributes['dni'] ?? null;
+    }
+
+    public function setDniAttribute($value)
+    {
+        $this->attributes['DNI'] = $value;
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'iduser', 'id');

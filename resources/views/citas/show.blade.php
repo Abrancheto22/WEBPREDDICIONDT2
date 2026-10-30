@@ -116,7 +116,7 @@
                                                                 <i class="bx bx-id-card me-2 text-muted"></i>
                                                             </div>
                                                             <div class="flex-grow-1">
-                                                                <span class="text-muted">DNI: {{ $cita->paciente ? $cita->paciente->DNI : 'N/A' }}</span>
+                                                                <span class="text-muted">DNI: {{ $cita->paciente ? ($cita->paciente->dni ?? $cita->paciente->DNI) : 'N/A' }}</span>
                                                             </div>
                                                         </div>
                                                     </div>

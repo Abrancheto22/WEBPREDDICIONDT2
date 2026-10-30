@@ -627,7 +627,7 @@
             infoCitaDiv.style.display = 'block';
 
             document.getElementById('infoPacienteNombre').textContent = `${citaSeleccionada.paciente.nombre || ''} ${citaSeleccionada.paciente.apellido || ''}`;
-            document.getElementById('infoPacienteDNI').textContent = citaSeleccionada.paciente.DNI || '-';
+            document.getElementById('infoPacienteDNI').textContent = citaSeleccionada.paciente.DNI || citaSeleccionada.paciente.dni || '-';
             document.getElementById('infoPacienteSexo').textContent = citaSeleccionada.paciente.sexo || '-';
             document.getElementById('infoPacienteTelefono').textContent = citaSeleccionada.paciente.telefono || '-';
             document.getElementById('infoCitaFecha').textContent = citaSeleccionada.fecha_cita || '-';

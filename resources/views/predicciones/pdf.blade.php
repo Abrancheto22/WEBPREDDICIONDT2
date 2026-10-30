@@ -240,7 +240,7 @@
                     <th>Nombre Completo</th>
                     <td>{{ $prediccion->cita->paciente->nombre }} {{ $prediccion->cita->paciente->apellido }}</td>
                     <th>DNI</th>
-                    <td>{{ $prediccion->cita->paciente->DNI }}</td>
+                    <td>{{ $prediccion->cita->paciente->dni ?? $prediccion->cita->paciente->DNI }}</td>
                 </tr>
                 <tr>
                     <th>Edad</th>

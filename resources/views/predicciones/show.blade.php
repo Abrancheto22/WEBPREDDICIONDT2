@@ -312,7 +312,7 @@
                                 <strong>Sexo:</strong> {{ $prediccion->cita->paciente->sexo }}
                             </div>
                             <div class="col-md-6">
-                                <strong>DNI:</strong> {{ $prediccion->cita->paciente->DNI }}
+                                <strong>DNI:</strong> {{ $prediccion->cita->paciente->dni ?? $prediccion->cita->paciente->DNI }}
                             </div>
                         </div>
                     </div>

@@ -28,6 +28,20 @@ class Enfermera extends Model
         'updated_at'
     ];
 
+    protected $appends = [
+        'DNI'
+    ];
+
+    public function getDNIAttribute()
+    {
+        return $this->attributes['dni'] ?? $this->attributes['DNI'] ?? null;
+    }
+
+    public function setDNIAttribute($value)
+    {
+        $this->attributes['dni'] = $value;
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'iduser', 'id');
